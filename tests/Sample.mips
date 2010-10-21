@@ -1,0 +1,100 @@
+#question1.s
+#Josh Wolfe
+#Joshua.S.Wolfe@asu.edu
+
+.data
+
+headA:	.asciiz "This function computes the Ackerman Function A(m,n)\n" 
+prmtM:	.asciiz "Enter m: " 
+prmtN:	.asciiz "Enter n: " 
+
+.text
+	.globl main
+main:
+	# print headA
+	li	$v0,	4
+	la	$a0,	headA
+	syscall
+
+	# print prmtM
+	li	$v0,	4
+	la	$a0,	prmtM
+	syscall
+
+	# read_int M
+	li	$v0,	5
+	syscall
+	move	$s0,	$v0
+
+	# print prmtN
+	li	$v0,	4
+	la	$a0,	prmtN
+	syscall
+
+	# read_int N
+	li	$v0,	5
+	syscall
+	move	$a0,	$s0
+	move	$a1,	$v0
+
+	# Acker()
+	jal	Acker
+
+
+	# print_int $v0
+	move	$a0,	$v0
+	li	$v0,	1
+	syscall
+	# print_char '\n'
+	li	$a0,	10
+	li	$v0,	11
+	syscall
+
+exit:	li	$v0,	10
+	syscall
+
+
+# int Acker(int m >= 0, int n >= 0)
+#  Acker 0 n = n + 1
+#  Acker m 0 = Acker(m - 1, 1)
+#  Acker m n = Acker(m - 1, Acker(m, n - 1))
+Acker:
+ A_0_n:
+	bne	$a0,	$zero,	mk_stk	# if (m == 0) {
+ 	# no stack needed
+	addi	$v0,	$a1,	1	#   return n + 1
+	jr	$ra			# }
+
+ mk_stk: # make stack space
+	addi	$sp,	$sp,	-12	# stack[3] = {
+	sw	$s0,	8($sp)		#     $s0,
+	sw	$s1,	4($sp)		#     &s1,
+	sw	$ra,	0($sp)		#     $ra};
+	move	$s0,	$a0		# int m;
+	move	$s1,	$a1		# int n;
+
+ A_m_0: # //return Acker(m - 1, 1);
+	bne	$s1,	$zero,	A_m_n	# if (n == 0) {
+	addi	$a0,	$s0,	-1	#   args = {m - 1,
+	addi	$a1,	$zero,	1	#           1};
+	jal	Acker			#   $v0 = Acker(args);
+	j	dl_stk			#   return $v0;
+					# }
+
+ A_m_n: # // return Acker(m - 1, Acker(m, n - 1));
+	addi	$a1,	$s1,	-1	# args = {m, n - 1};
+	jal	Acker			# $v0 = Acker(args);
+	addi	$a0,	$s0,	-1	# args = {m - 1,
+	move	$a1,	$v0		#         $v0};
+	jal	Acker			# $v0 = Acker(args);
+					# return $v0;
+
+ dl_stk: # delete stack space
+	lw	$s0,	8($sp)		# restore $a0
+	lw	$s1,	4($sp)		# restore $s0
+	lw	$ra,	0($sp)		# restore $ra
+	addi	$sp,	$sp,	12	# free stack
+
+	jr	$ra			# return
+
+#end of question1.s

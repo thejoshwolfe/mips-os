@@ -1,0 +1,19 @@
+
+.globl	kernel
+
+
+.data
+
+main:	.extern	main
+
+.text
+
+kernel:
+	# call extern main()
+	la	$k0,	main
+	lw	$k0,	0($k0)
+	jalr	$ra,	$k0
+
+
+exit:	li	$v0,	10
+	syscall
