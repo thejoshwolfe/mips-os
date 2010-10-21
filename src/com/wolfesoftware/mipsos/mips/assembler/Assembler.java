@@ -140,8 +140,7 @@ public class Assembler
      * the main point of this class. Assembles the MIPS source from inStream,
      * and prints the result to outStream.
      */
-    public static void assemble(InputStream inStream, OutputStream outStream, boolean readable, int dataAddress, int textAddress)
-            throws AssemblingException, IOException
+    public static void assemble(InputStream inStream, OutputStream outStream, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
     {
         // OutputStream outStream = options.outStream;
 
