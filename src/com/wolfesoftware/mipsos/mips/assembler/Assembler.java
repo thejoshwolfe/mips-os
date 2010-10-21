@@ -30,88 +30,70 @@ public class Assembler
         int textAddress = baseAddresses.get(".text");
 
         // read filename for input
-        if (!(args.length >= 1))
-        {
+        if (!(args.length >= 1)) {
             printUsage();
             return;
         }
         FileInputStream inStream;
-        try
-        {
+        try {
             inStream = new FileInputStream(args[0]);
-        } catch (FileNotFoundException e)
-        {
+        } catch (FileNotFoundException e) {
             System.out.println("File not found: " + args[0]);
             return;
         }
 
         // go through remaining args looking for options
         int i = 1; // skip the input file name
-        while (i < args.length)
-        {
+        while (i < args.length) {
             String arg = args[i];
-            if (arg.equals("-d"))
-            {
+            if (arg.equals("-d")) {
                 // data address
-                if (i + 1 >= args.length)
-                {
+                if (i + 1 >= args.length) {
                     printUsage();
                     return;
                 }
-                try
-                {
+                try {
                     dataAddress = parseAddress(args[i + 1]);
-                } catch (NumberFormatException e)
-                {
+                } catch (NumberFormatException e) {
                     System.out.println(e.toString());
                     printUsage();
                     return;
                 }
                 i += 2;
-            } else if (arg.equals("-t"))
-            {
+            } else if (arg.equals("-t")) {
                 // text address
-                if (i + 1 >= args.length)
-                {
+                if (i + 1 >= args.length) {
                     printUsage();
                     return;
                 }
-                try
-                {
+                try {
                     textAddress = parseAddress(args[i + 1]);
-                } catch (NumberFormatException e)
-                {
+                } catch (NumberFormatException e) {
                     System.out.println(e.toString());
                     printUsage();
                     return;
                 }
                 i += 2;
-            } else if (arg.equals("-r"))
-            {
+            } else if (arg.equals("-r")) {
                 // readable
                 readable = true;
                 i += 1;
-            } else if (arg.equals("-o"))
-            {
+            } else if (arg.equals("-o")) {
                 // output file
-                if (i + 1 >= args.length)
-                {
+                if (i + 1 >= args.length) {
                     printUsage();
                     return;
                 }
                 // FileOutputStream outStream;
-                try
-                {
+                try {
                     outStream = new FileOutputStream(args[i + 1]);
-                } catch (FileNotFoundException e)
-                {
+                } catch (FileNotFoundException e) {
                     System.out.println("Illegal output file name: " + args[i + 1]);
                     return;
                 }
                 // options.outStream = outStream;
                 i += 2;
-            } else
-            {
+            } else {
                 // invalid argument
                 printUsage();
                 return;
@@ -124,14 +106,11 @@ public class Assembler
             readable = true;
 
         // call the assemble function
-        try
-        {
+        try {
             assemble(inStream, outStream, readable, dataAddress, textAddress);
-        } catch (AssemblingException e)
-        {
+        } catch (AssemblingException e) {
             System.out.print(e.toString());
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -149,24 +128,20 @@ public class Assembler
         String fullSrc = "";
         ArrayList<Integer> lineIndecies = new ArrayList<Integer>();
         // convert all newlines to '\n'
-        if (inScanner.hasNextLine())
-        { // do the first one specially with no "\n" at the beginning
+        if (inScanner.hasNextLine()) { // do the first one specially with no "\n" at the beginning
             lineIndecies.add(fullSrc.length());
             fullSrc += inScanner.nextLine();
         }
-        while (inScanner.hasNextLine())
-        {
+        while (inScanner.hasNextLine()) {
             lineIndecies.add(fullSrc.length());
             fullSrc += "\n" + inScanner.nextLine();
         }
 
         // tokenize TODO Document
         Token.TokenBase[] tokens;
-        try
-        {
+        try {
             tokens = Tokenizer.tokenize(fullSrc);
-        } catch (TokenizingException e)
-        {
+        } catch (TokenizingException e) {
             int srcLocation = e.srcLocation;
             int line = findInList(lineIndecies, srcLocation);
             int col = srcLocation - lineIndecies.get(line);
@@ -175,15 +150,12 @@ public class Assembler
 
         // parse TODO document
         Parser.Binarization binarization;
-        try
-        {
+        try {
             binarization = Parser.parse(tokens, dataAddress, textAddress);
-        } catch (ParsingException e)
-        {
+        } catch (ParsingException e) {
             Token.TokenBase token = tokens[e.tokenIndex];
             int startLine = findInList(lineIndecies, token.srcStart);
-            throw new CompilingException(token.srcStart, startLine + 1, token.srcStart - lineIndecies.get(startLine), token.srcEnd
-                    - token.srcStart, e.message);
+            throw new CompilingException(token.srcStart, startLine + 1, token.srcStart - lineIndecies.get(startLine), token.srcEnd - token.srcStart, e.message);
         }
 
         // collect all the required labels
@@ -211,8 +183,7 @@ public class Assembler
         // labels
 
         // output
-        if (readable)
-        {
+        if (readable) {
             // .head section
             PrintStream printStream = new PrintStream(outStream);
             printStream.println(".head");
@@ -241,8 +212,7 @@ public class Assembler
 
             // .text section
             verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSrc);
-        } else
-        {
+        } else {
             // .head section
             outStream.write(binarization.header.getBinary(binarization.labels, 0));
 
@@ -260,41 +230,34 @@ public class Assembler
         }
     }
 
-    private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress,
-            Hashtable<String, Long> labels, boolean useAddress, Token.TokenBase[] tokens, String fullSrc)
+    private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress, Hashtable<String, Long> labels, boolean useAddress,
+            Token.TokenBase[] tokens, String fullSrc)
     {
-        if (elems.length > 0)
-        {
+        if (elems.length > 0) {
             printStream.println();
             printStream.println(sectionTitle);
         }
         long addr = baseAddress;
-        for (Bin.BinBase binElem : elems)
-        {
+        for (Bin.BinBase binElem : elems) {
             byte[] bytes = binElem.getBinary(labels, addr);
             String[] strBinWords = new String[bytes.length >> 2];
-            for (int j = 0; j < bytes.length / 4; j++)
-            {
+            for (int j = 0; j < bytes.length / 4; j++) {
                 strBinWords[j] = (useAddress ? addrToString(addr) + ": " : blankBinAddr) + bytesWordToString(bytes, j * 4);
                 addr += binElem.getBinLen();
             }
             String comment = fullSrc.substring(tokens[binElem.tokenStart].srcStart, tokens[binElem.tokenEnd - 1].srcEnd);
             String[] commentLines = comment.split("\n");
             int maxLen = Math.max(strBinWords.length, commentLines.length);
-            for (int j = 0; j < maxLen; j++)
-            {
-                printStream.println((j < strBinWords.length ? strBinWords[j] : blankBinWord)
-                        + (j < commentLines.length ? " ; " + commentLines[j] : ""));
+            for (int j = 0; j < maxLen; j++) {
+                printStream.println((j < strBinWords.length ? strBinWords[j] : blankBinWord) + (j < commentLines.length ? " ; " + commentLines[j] : ""));
             }
         }
     }
 
-    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, OutputStream outStream, Hashtable<String, Long> labels)
-            throws IOException
+    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, OutputStream outStream, Hashtable<String, Long> labels) throws IOException
     {
         long addr = baseAddress;
-        for (Bin.BinBase binElem : binElems)
-        {
+        for (Bin.BinBase binElem : binElems) {
             outStream.write(binElem.getBinary(labels, addr));
             addr += binElem.getBinLen();
         }
@@ -304,8 +267,7 @@ public class Assembler
     {
         // iterative binary search
         int left = 0, right = list.size() - 1, mid;
-        while (left < right)
-        {
+        while (left < right) {
             mid = (left + right + 1) >> 1; // midpoint rounded up
             if (target < list.get(mid))
                 right = mid - 1;
@@ -348,12 +310,9 @@ public class Assembler
     // prints the intended command line usage of the main function
     private static void printUsage()
     {
-        System.out.print("\n" + "Usage:\n"
-                + "    java Assembler (inputfile) [-o (outputfile)] [-t (textbaseaddress)] [-d (databaseaddress)] [-r]\n" + "\n"
-                + "Example:\n" + "    java Assembler MyMipsProgram.asm -o a.out.txt -t 0x00400000 -v\n" + "\n" + "Args:\n"
-                + "    [inputfile]: name of input file\n" + "    [outputfile]: name of output file\n"
-                + "    [textbaseaddress]: base address of the instructions (int>=0. dec or hex)\n"
-                + "    [databaseaddress]: base address of the data (int>=0. dec or hex)\n" + "\n" + "Options:\n"
+        System.out.print("\n" + "Usage:\n" + "    java Assembler (inputfile) [-o (outputfile)] [-t (textbaseaddress)] [-d (databaseaddress)] [-r]\n" + "\n" + "Example:\n"
+                + "    java Assembler MyMipsProgram.asm -o a.out.txt -t 0x00400000 -v\n" + "\n" + "Args:\n" + "    [inputfile]: name of input file\n" + "    [outputfile]: name of output file\n"
+                + "    [textbaseaddress]: base address of the instructions (int>=0. dec or hex)\n" + "    [databaseaddress]: base address of the data (int>=0. dec or hex)\n" + "\n" + "Options:\n"
                 + "    [-r]: readable. human-readable output\n" + "\n");
     }
 
@@ -362,12 +321,10 @@ public class Assembler
     private static int parseAddress(String text)
     {
         long temp;
-        if (text.length() >= 2 && text.substring(0, 2).equals("0x"))
-        {
+        if (text.length() >= 2 && text.substring(0, 2).equals("0x")) {
             // hex base address
             temp = Long.parseLong(text.substring(2), 16);
-        } else
-        {
+        } else {
             // dec base address
             temp = Long.parseLong(text, 10);
         }
@@ -376,7 +333,7 @@ public class Assembler
         if (!(0 <= temp && temp <= 0x7FFFFFFFL))
             throw new NumberFormatException();
         else
-            return (int) (temp & -4); // truncate to word
+            return (int)(temp & -4); // truncate to word
     }
 
     public static IAssemblerOptions makeDefaultOptions()
