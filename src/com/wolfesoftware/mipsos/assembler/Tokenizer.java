@@ -18,7 +18,6 @@ public class Tokenizer
     private static final String PRMT_UnrecognizedEscapeSequence = "Unrecognized escape sequence.";
     private static final String PRMT_ExpectedHexDigit = "Expected hex digit.";
 
-
     public static Token.TokenBase[] tokenize(final String src) throws TokenizingException
     {
         ArrayList<Token.TokenBase> tokens = new ArrayList<Token.TokenBase>();
@@ -27,10 +26,11 @@ public class Tokenizer
         int i = 0;
         while (i < srcLength) {
             char c = src.charAt(i);
-            if (Character.isWhitespace(c)) // whitespace (skip)
+            if (Character.isWhitespace(c)) {
+                // whitespace (skip)
                 i++;
-            else if (c == '#') // comment (skip whole line)
-            {
+            } else if (c == '#' || c == ';') {
+                // comment (skip whole line)
                 do
                     i++;
                 while (i < src.length() && src.charAt(i) != '\n'); // skip all chars until the newline

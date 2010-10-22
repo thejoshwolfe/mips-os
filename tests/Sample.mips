@@ -9,7 +9,6 @@ prmtM:	.asciiz "Enter m: "
 prmtN:	.asciiz "Enter n: " 
 
 .text
-	.globl main
 main:
 	# print headA
 	li	$v0,	4

@@ -123,7 +123,7 @@ public class Assembler
 
         // read input stream
         Scanner inScanner = new Scanner(inStream);
-        String fullSrc = "";
+        String fullSrc = ""; // TODO: use StringBuilder
         ArrayList<Integer> lineIndecies = new ArrayList<Integer>();
         // convert all newlines to '\n'
         if (inScanner.hasNextLine()) { // do the first one specially with no "\n" at the beginning
@@ -158,12 +158,7 @@ public class Assembler
 
         // collect all the required labels
         BinTreeSet<String> requiredLabels = new BinTreeSet<String>();
-        for (Bin.BinBase binElem : binarization.globls)
-            for (String s : binElem.getLabelDependencies())
-                requiredLabels.add(s);
-        for (Bin.BinBase binElem : binarization.externs)
-            for (String s : binElem.getLabelDependencies())
-                requiredLabels.add(s);
+        requiredLabels.add("main");
         for (Bin.BinBase binElem : binarization.dataElems)
             for (String s : binElem.getLabelDependencies())
                 requiredLabels.add(s);
@@ -177,8 +172,7 @@ public class Assembler
         ArrayList<String> missingLabels = requiredLabels.complement(definedLabels);
         // check that all labels are defined
         if (!(missingLabels.isEmpty()))
-            throw new UndefinedLabelsException(missingLabels); // report missing
-        // labels
+            throw new UndefinedLabelsException(missingLabels); // report missing labels
 
         // output
         if (readable) {
@@ -187,23 +181,15 @@ public class Assembler
             printStream.println(".head");
             {
                 byte[] bytes = binarization.header.getBinary(binarization.labels, -1);
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 0) + " ; .globl Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4) + " ; .globl Length");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 8) + " ; .extern Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 12) + " ; .extern Length");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 16) + " ; .data Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 20) + " ; .data Address");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 24) + " ; .data Length");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 28) + " ; .text Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 32) + " ; .text Address");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 36) + " ; .text Length");
+                int wordCounter = 0;
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Offset");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Address");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Length");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Offset");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Address");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Length");
+                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; executable entry point");
             }
-
-            // .globl section
-            verboseOutput(binarization.globls, printStream, ".globl", -1, binarization.labels, false, tokens, fullSrc);
-
-            // .extern section
-            verboseOutput(binarization.externs, printStream, ".extern", -1, binarization.labels, false, tokens, fullSrc);
 
             // .data section
             verboseOutput(binarization.dataElems, printStream, ".data", dataAddress, binarization.labels, true, tokens, fullSrc);
@@ -214,12 +200,6 @@ public class Assembler
             // .head section
             outStream.write(binarization.header.getBinary(binarization.labels, 0));
 
-            // .globl section
-            nonverboseOutput(0, binarization.globls, outStream, binarization.labels);
-
-            // .extern section
-            nonverboseOutput(0, binarization.externs, outStream, binarization.labels);
-
             // .data section
             nonverboseOutput(dataAddress, binarization.dataElems, outStream, binarization.labels);
 
@@ -228,7 +208,7 @@ public class Assembler
         }
     }
 
-    private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress, Hashtable<String, Long> labels, boolean useAddress,
+    private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress, HashMap<String, Long> labels, boolean useAddress,
             Token.TokenBase[] tokens, String fullSrc)
     {
         if (elems.length > 0) {
@@ -252,7 +232,7 @@ public class Assembler
         }
     }
 
-    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, OutputStream outStream, Hashtable<String, Long> labels) throws IOException
+    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, OutputStream outStream, HashMap<String, Long> labels) throws IOException
     {
         long addr = baseAddress;
         for (Bin.BinBase binElem : binElems) {
@@ -351,7 +331,7 @@ public class Assembler
         return new IAssemblerOptions() {
             public Map<String, Integer> getSegmentBaseAddresses()
             {
-                Map<String, Integer> baseAddresses = new Hashtable<String, Integer>(2);
+                Map<String, Integer> baseAddresses = new HashMap<String, Integer>(2);
                 baseAddresses.put(".data", DefaultDataAddress);
                 baseAddresses.put(".text", DefaultTextAddress);
                 return baseAddresses;

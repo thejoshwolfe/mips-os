@@ -27,13 +27,11 @@ public final class ByteUtils
         return bytes;
     }
 
-    // converts an array of numbers to an array of ints stored as an array of
-    // bytes
-    public static byte[] convertInt(long[] ints)
+    // converts an array of numbers to an array of ints stored as an array of bytes
+    public static byte[] convertToInts(long[] ints)
     {
         byte[] bytes = new byte[ints.length * 4];
-        for (int i = 0; i < ints.length; i++)
-        {
+        for (int i = 0; i < ints.length; i++) {
             // big endian
             bytes[i * 4 + 0] = (byte)((ints[i] & 0xFF000000) >> 24);
             bytes[i * 4 + 1] = (byte)((ints[i] & 0x00FF0000) >> 16);
@@ -120,8 +118,11 @@ public final class ByteUtils
         return bytes;
     }
 
-    public static int readInt(byte[] bytes, int i)
+    public static int readInt(byte[] bytes, int offset)
     {
-        return ((bytes[i + 0] & 0xFF) << 24) | ((bytes[i + 1] & 0xFF) << 16) | ((bytes[i + 2] & 0xFF) << 8) | ((bytes[i + 3] & 0xFF) << 0);
+        return ((bytes[offset + 0] & 0xFF) << 24) | //
+                ((bytes[offset + 1] & 0xFF) << 16) | //
+                ((bytes[offset + 2] & 0xFF) << 8) | //
+                ((bytes[offset + 3] & 0xFF) << 0);
     }
 }

@@ -34,124 +34,89 @@ public class Parser
 	private static final String PRMT_UnsupportedSyntaxFormat = "Unsupported syntax format.";
 	// the primary parse method. Takes an array of tokens and assembler options and 
 	// outputs a Binarization containing arrays of binary elements.
-	public static Binarization parse(Token.TokenBase[] tokens, int dataAddr, int textAddr) throws ParsingException
-	{
-		ArrayList<Bin.BinBase> dataElems = new ArrayList<Bin.BinBase>(); // accumulates binary elements in the .data section
-		ArrayList<Bin.BinBase> textElems = new ArrayList<Bin.BinBase>(); // accumulates binary elements in the .text section
+	public static Binarization parse(Token.TokenBase[] tokens, int dataStartAddress, int textStartAddress) throws ParsingException
+    {
+        ArrayList<Bin.BinBase> dataElems = new ArrayList<Bin.BinBase>(); // accumulates binary elements in the .data section
+        ArrayList<Bin.BinBase> textElems = new ArrayList<Bin.BinBase>(); // accumulates binary elements in the .text section
 
-		Hashtable<String, Long> labels = new Hashtable<String, Long>(); // stores the addresses of labels
-		ArrayList<Bin.Globl> globls = new ArrayList<Bin.Globl>(); // stores a list of globally exposed labels
-		ArrayList<Bin.ExternHeader> externs = new ArrayList<Bin.ExternHeader>(); // stores a list of externally required labels
+        HashMap<String, Long> labels = new HashMap<String, Long>(); // stores the addresses of labels
 
-		int i = 0; // iterates tokens[i]
-		Token.TagSection.SectionTagEnum section = // current section
-			Token.TagSection.SectionTagEnum.TEXT; // default is .text section
-		
-		// iterate through every token in the array
-		while (i < tokens.length)
-		{
-			switch (section)
-			{
-			case DATA: // .data specific statements
-				// check for .data Label declaration
-				Bin.Label binDataLabel = parseLabel(tokens, i);
-				if (binDataLabel != null)
-				{
-					// found .data Label declaration
-					labels.put(binDataLabel.labelName, (long)dataAddr); // store this label's address
-					dataElems.add(binDataLabel);
-					i = binDataLabel.tokenEnd;
-					continue;
-				}
-				// check for data tags (.byte, .dword, .double, .asciiz, etc.)
-				Bin.Data binData = parseData(tokens, i);
-				if (binData != null)
-				{
-					// found a data tag
-					dataElems.add(binData);
-					dataAddr += binData.getBinLen();
-					i = binData.tokenEnd;
-					continue;
-				}
-				// check for .extern tag
-				Bin.ExternDataSlot binExtern = parseExtern(tokens, i);
-				if (binExtern != null)
-				{
-					// found an extern tag
-					dataElems.add(binExtern);
-					// create extern header
-					externs.add(new Bin.ExternHeader(binExtern.labelName, dataAddr, binExtern.tokenStart, binExtern.tokenEnd));
-					dataAddr += binExtern.getBinLen();
-					i = binExtern.tokenEnd;
-					continue;
-				}
-				break;
-			case TEXT: // .text specific statements
-				// check for instruction(s)
-				Bin.BinBase binInstrs = parseInstr(tokens, i);
-				if (binInstrs != null)
-				{
-					// found an instruction
-					textElems.add(binInstrs);
-					textAddr += binInstrs.getBinLen();
-					i = binInstrs.tokenEnd;
-					continue;
-				}
-				// check for .text Label declarations
-				Bin.Label binTextLabel = parseLabel(tokens, i);
-				if (binTextLabel != null)
-				{
-					// found a .text Label declaration
-					labels.put(binTextLabel.labelName, (long)textAddr); // store the label's address
-					textElems.add(binTextLabel);
-					i = binTextLabel.tokenEnd;
-					continue;
-				}
-				break;
-			default:
-				// unknown section
-				throw new ParsingException(i - 1, PRMT_UnsupportedSection);
-			}
-			// non-section-specific statements
-			
-			// check for section tags (.data, .text)
-			if (tokens[i] instanceof Token.TagSection)
-			{
-				// found a section tag
-				section = ((Token.TagSection)tokens[i]).tag; // change sections
-				i += 1;
-				continue;
-			}
-			// check for .globl tag
-			Bin.Globl binGlobl = parseGlobl(tokens, i);
-			if (binGlobl != null)
-			{
-				// found a misc tag
-				globls.add(binGlobl);
-				i = binGlobl.tokenEnd;
-				continue;
-			}
-			
-			throw new ParsingException(i, PRMT_IllegalStartOfStatement);
-		}
-		
-		// convert ArrayList<> into arrays
-		Bin.Globl[] globlsArray = new Bin.Globl[globls.size()];
-		for (int j = 0; j < globlsArray.length; j++)
-			globlsArray[j] = globls.get(j);
-		Bin.ExternHeader[] externsArray = new Bin.ExternHeader[externs.size()];
-		for (int j = 0; j < externsArray.length; j++)
-			externsArray[j] = externs.get(j);
-		Bin.BinBase[] dataArray = new Bin.BinBase[dataElems.size()];
-		for (int j = 0; j < dataArray.length; j++)
-			dataArray[j] = dataElems.get(j);
-		Bin.BinBase[] textArray = new Bin.BinBase[textElems.size()];
-		for (int j = 0; j < textArray.length; j++)
-			textArray[j] = textElems.get(j);
+        int i = 0; // iterates tokens[i]
+        Token.TagSection.SectionTagEnum section = // current section
+        Token.TagSection.SectionTagEnum.TEXT; // default is .text section
 
-		// construct Binarization and return
-		return new Binarization(globlsArray, externsArray, dataArray, textArray, labels, dataAddr, textAddr);
-	}
+        int runningDataAddress = dataStartAddress;
+        int runningTextAddress = textStartAddress;
+        // iterate through every token in the array
+        while (i < tokens.length) {
+            switch (section) {
+                case DATA: // .data specific statements
+                    // check for .data Label declaration
+                    Bin.Label binDataLabel = parseLabel(tokens, i);
+                    if (binDataLabel != null) {
+                        // found .data Label declaration
+                        labels.put(binDataLabel.labelName, (long)runningDataAddress); // store this label's address
+                        dataElems.add(binDataLabel);
+                        i = binDataLabel.tokenEnd;
+                        continue;
+                    }
+                    // check for data tags (.byte, .dword, .double, .asciiz, etc.)
+                    Bin.Data binData = parseData(tokens, i);
+                    if (binData != null) {
+                        // found a data tag
+                        dataElems.add(binData);
+                        runningDataAddress += binData.getBinLen();
+                        i = binData.tokenEnd;
+                        continue;
+                    }
+                    break;
+                case TEXT: // .text specific statements
+                    // check for instruction(s)
+                    Bin.BinBase binInstrs = parseInstr(tokens, i);
+                    if (binInstrs != null) {
+                        // found an instruction
+                        textElems.add(binInstrs);
+                        runningTextAddress += binInstrs.getBinLen();
+                        i = binInstrs.tokenEnd;
+                        continue;
+                    }
+                    // check for .text Label declarations
+                    Bin.Label binTextLabel = parseLabel(tokens, i);
+                    if (binTextLabel != null) {
+                        // found a .text Label declaration
+                        labels.put(binTextLabel.labelName, (long)runningTextAddress); // store the label's address
+                        textElems.add(binTextLabel);
+                        i = binTextLabel.tokenEnd;
+                        continue;
+                    }
+                    break;
+                default:
+                    // unknown section
+                    throw new ParsingException(i - 1, PRMT_UnsupportedSection);
+            }
+            // non-section-specific statements
+
+            // check for section tags (.data, .text)
+            if (tokens[i] instanceof Token.TagSection) {
+                // found a section tag
+                section = ((Token.TagSection)tokens[i]).tag; // change sections
+                i += 1;
+                continue;
+            }
+
+            throw new ParsingException(i, PRMT_IllegalStartOfStatement);
+        }
+
+        Bin.BinBase[] dataArray = new Bin.BinBase[dataElems.size()];
+        for (int j = 0; j < dataArray.length; j++)
+            dataArray[j] = dataElems.get(j);
+        Bin.BinBase[] textArray = new Bin.BinBase[textElems.size()];
+        for (int j = 0; j < textArray.length; j++)
+            textArray[j] = textElems.get(j);
+
+        // construct Binarization and return
+        return new Binarization(dataArray, textArray, labels, dataStartAddress, textStartAddress);
+    }
 
 	// attempts to parse a label declaration. ("labelName" + ":")
 	// Returns null on failure. 
@@ -299,30 +264,6 @@ public class Parser
 		}
 	}
 
-	private static Bin.ExternDataSlot parseExtern(Token.TokenBase[] tokens, int i) throws ParsingException
-	{
-		if (!(tokens[i] instanceof Token.TagExtern)) // check token type
-			return null;
-		if (i + 1 >= tokens.length) // check length
-			throw new ParsingException(tokens.length - 1, PRMT_UnexpectedEndOfFile);
-		if (!(tokens[i + 1] instanceof Token.Label))
-			throw new ParsingException(i + 1, PRMT_ExpectedLabel);
-		return new Bin.ExternDataSlot(((Token.Label)tokens[i + 1]).labelName, i, i + 2);
-	}
-
-	// attempts to parse a .globl statement (eg: ".globl" + "main")
-	// Returns null on early failure. 
-	private static Bin.Globl parseGlobl(Token.TokenBase[] tokens, int i) throws ParsingException
-	{
-		if (!(tokens[i] instanceof Token.TagGlobl))
-			return null;
-		if (i + 1 >= tokens.length) // check length
-			throw new ParsingException(tokens.length - 1, PRMT_UnexpectedEndOfFile);
-		if (!(tokens[i + 1] instanceof Token.Label))
-			throw new ParsingException(i + 1, PRMT_ExpectedLabel);
-		return new Bin.Globl(((Token.Label)tokens[i + 1]).labelName, i, i + 2);
-	}
-	
 	// attempts to parse an instruction. (eg: "lw" + "$s0" + "," + "8" + "(" + "$sp" + ")")
 	// Returns null on early failure. 
 	private static Bin.BinBase parseInstr(Token.TokenBase[] tokens, int i) throws ParsingException
@@ -809,33 +750,19 @@ public class Parser
 	public static class Binarization
 	{
 		public Bin.Header header;
-		public Bin.BinBase[] globls;
-		public Bin.BinBase[] externs;
 		public Bin.BinBase[] dataElems;
 		public int dataAddr;
 		public Bin.BinBase[] textElems;
 		public int textAddr;
-		public Hashtable<String, Long> labels;
+		public HashMap<String, Long> labels;
 
 		// take only required information and deduce the rest
-		public Binarization(Bin.Globl[] globls,
-		                    Bin.ExternHeader[] externs,
-		                    Bin.BinBase[] dataElems, 
+		public Binarization(Bin.BinBase[] dataElems, 
 		                    Bin.BinBase[] textElems, 
-		                    Hashtable<String, Long> labels, 
+		                    HashMap<String, Long> labels, 
 		                    int dataAddress,
 		                    int textAddress)
 		{
-			this.globls = globls;
-			int globlLen = 0;
-			for (Bin.BinBase binGlobl : this.globls)
-				globlLen += binGlobl.getBinLen();
-
-			this.externs = externs;
-			int externLen = 0;
-			for (Bin.BinBase binExtern : this.externs)
-				externLen += binExtern.getBinLen();
-
 			this.dataElems = dataElems;
 			this.dataAddr = dataAddress;
 			int dataLen = 0;
@@ -848,7 +775,7 @@ public class Parser
 			for (Bin.BinBase binElem : this.textElems)
 				textLen += binElem.getBinLen();
 
-			this.header = new Bin.Header(globlLen, externLen, dataAddr, dataLen, textAddr, textLen);
+			this.header = new Bin.Header(dataAddr, dataLen, textAddr, textLen);
 
 			this.labels = labels;
 		}

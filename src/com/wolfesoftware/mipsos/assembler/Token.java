@@ -16,7 +16,6 @@ public class Token
             this.srcStart = srcStart;
             this.srcEnd = srcEnd;
         }
-
     }
 
     // an instruction name token (such as "addi")

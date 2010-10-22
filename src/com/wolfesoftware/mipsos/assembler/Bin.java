@@ -1,6 +1,6 @@
 package com.wolfesoftware.mipsos.assembler;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -32,7 +32,7 @@ public class Bin
          * mapping, the binary data need not be difined until a complete dictionary of 
          * labels has been constructed.
          */
-        public abstract byte[] getBinary(Hashtable<String, Long> labels, long currentAddress);
+        public abstract byte[] getBinary(HashMap<String, Long> labels, long currentAddress);
 
         /**
          * Returns the length of the byte array that getBinary() will return. This length 
@@ -43,7 +43,7 @@ public class Bin
 
         /**
          * Returns an array containing the names of all labels that must be defined in the 
-         * Hashtable passed to getBinary(). Child classes should override this method if
+         * HashMap passed to getBinary(). Child classes should override this method if
          * they depend on any labels
          */
         public String[] getLabelDependencies()
@@ -78,7 +78,7 @@ public class Bin
             return bytes.length;
         }
 
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
+        public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             return bytes;
         }
@@ -92,7 +92,7 @@ public class Bin
                 case HALF:
                     return ByteUtils.convertShort(nums);
                 case WORD:
-                    return ByteUtils.convertInt(nums);
+                    return ByteUtils.convertToInts(nums);
                 case DWORD:
                     return ByteUtils.convertLong(nums);
                 default:
@@ -114,114 +114,11 @@ public class Bin
         }
     }
 
-    public static class ExternDataSlot extends BinBase
-    {
-        public String labelName;
-
-        public ExternDataSlot(String labelName, int tokenStart, int tokenEnd)
-        {
-            super(tokenStart, tokenEnd);
-            this.labelName = labelName;
-        }
-
-        public int getBinLen()
-        {
-            return 4; //space for an address
-        }
-
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
-        {
-            return new byte[4]; // this data will be overridden by the linker
-        }
-    }
-
-    /**
-     * A section that exposes a label and an address to a linker (globl and a
-     * extern). See the implementation of getBinary() for the binary format.
-     */
-    public static abstract class LinkLabel extends BinBase
-    {
-        public String labelName;
-
-        // constructor
-        public LinkLabel(String labelName, int tokenStart, int tokenEnd)
-        {
-            super(tokenStart, tokenEnd);
-            this.labelName = labelName;
-        }
-
-        // See the implementation of getBinary() for the binary format.
-        public int getBinLen()
-        {
-            return (labelName.length() + 11) & -4; // add 2 words and pad up to next word
-        }
-
-        // Three sections: int nameLen; char[] name {...}; int targetAddress;
-        // The nameLen is the length of the name. The name is the name of the label the 
-        // targetAddress is either the address of the globl label or the extern field. 
-        // The name section is padded up to the next word with 0's.
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
-        {
-            byte[] bytes = new byte[getBinLen()]; // space for final byte array
-            // int nameLen;
-            byte[] nameLenPart = ByteUtils.convertInt(new long[] { (long)labelName.length() });
-            System.arraycopy(nameLenPart, 0, bytes, 0, 4);
-            // char[] name {...};
-            byte[] namePart = ByteUtils.convertAscii(labelName);
-            System.arraycopy(namePart, 0, bytes, 4, namePart.length);
-            // int targetAddress;
-            byte[] addressPart = ByteUtils.convertInt(new long[] { getTargetAddress(labels) });
-            System.arraycopy(addressPart, 0, bytes, 4 + namePart.length, 4);
-
-            return bytes;
-        }
-
-        public abstract long getTargetAddress(Hashtable<String, Long> labels);
-    }
-
-    public static class Globl extends LinkLabel
-    {
-        public Globl(String labelName, int tokenStart, int tokenEnd)
-        {
-            super(labelName, tokenStart, tokenEnd);
-        }
-
-        public long getTargetAddress(Hashtable<String, Long> labels)
-        {
-            return labels.get(labelName);
-        }
-
-        public String[] getLabelDependencies()
-        {
-            return new String[] { labelName };
-        }
-    }
-
-    public static class ExternHeader extends LinkLabel
-    {
-        public long targetAddress;
-
-        public ExternHeader(String labelName, long targetAddress, int tokenStart, int tokenEnd)
-        {
-            super(labelName, tokenStart, tokenEnd);
-            this.targetAddress = targetAddress;
-        }
-
-        public long getTargetAddress(Hashtable<String, Long> labels)
-        {
-            return targetAddress;
-        }
-    }
-
     /**
      * The header section of a Parser.Binarization. Stores 8 ints. See below.
      */
     public static class Header extends BinBase
     {
-        public int globlOffset; // the beginning of the .globl section
-        public int globlLen; // the length of the .globl section
-        public int externOffset; // the beginning of the .globl section
-        public int externLen; // the length of the .globl section
         public int dataOffset; // the start of the .data section
         public int dataAddr; // the intended base address for the .data section
         public int dataLen; // the length of the .data section
@@ -229,15 +126,10 @@ public class Bin
         public int textAddr; // the intended base address for the .text section
         public int textLen; // the length of the .text section
 
-        // constructor. Takes necessary information to construct the above fields.
-        public Header(int globlLen, int externLen, int dataAddr, int dataLen, int textAddr, int textLen)
+        public Header(int dataAddr, int dataLen, int textAddr, int textLen)
         {
             super(0, 0);
-            this.globlOffset = getBinLen(); // starts after .head
-            this.globlLen = globlLen;
-            this.externOffset = globlOffset + globlLen; // starts after .globl
-            this.externLen = externLen;
-            this.dataOffset = externOffset + externLen; // starts after .extern
+            this.dataOffset = getBinLen();
             this.dataAddr = dataAddr;
             this.dataLen = dataLen;
             this.textOffset = dataOffset + dataLen; // starts after .data
@@ -247,25 +139,21 @@ public class Bin
 
         public int getBinLen()
         {
-            return 40; // 10 int's
+            return getBinary(null, 0).length;
         }
 
         // outputs the 8 ints one right after the other
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
+        public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
-            byte[] bytes = ByteUtils.convertInt(new long[] { //
-                    globlOffset, //
-                            globlLen, //
-                            externOffset, //
-                            externLen, //
-                            dataOffset, //
-                            dataAddr, //
-                            dataLen, //
-                            textOffset, //
-                            textAddr, //
-                            textLen, //
-                    });
-            return bytes;
+            return ByteUtils.convertToInts(new long[] { //
+                    dataOffset, //
+                    dataAddr, //
+                    dataLen, //
+                    textOffset, //
+                    textAddr, //
+                    textLen, //
+                    labels == null ? 0 : labels.get("main"),
+            });
         }
     }
 
@@ -284,7 +172,7 @@ public class Bin
 
         // this class implements the getBinary() method but requires child classes to implement
         // the getBinWord method. The binary word returned here is used for getBinary().
-        protected abstract long getBinWord(Hashtable<String, Long> labels, long currentAddress);
+        protected abstract long getBinWord(HashMap<String, Long> labels, long currentAddress);
 
         // all non-pseudo instructions are 1 word
         public int getBinLen()
@@ -293,7 +181,7 @@ public class Bin
         }
 
         // implemented for all instruction elements
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
+        public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             long binWord = getBinWord(labels, currentAddress);
             // big endian
@@ -368,7 +256,7 @@ public class Bin
         }
 
         // I-format
-        protected long getBinWord(Hashtable<String, Long> labels, long currentAddress)
+        protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             return (opcode << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF);
         }
@@ -390,10 +278,10 @@ public class Bin
         }
 
         // child classes will use the label's address in some way to fill the immediate field.
-        protected abstract short getImm(Hashtable<String, Long> labels, long currentAddress);
+        protected abstract short getImm(HashMap<String, Long> labels, long currentAddress);
 
         // I-format after filling the immediate field with getImm()
-        protected long getBinWord(Hashtable<String, Long> labels, long currentAddress)
+        protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             imm = getImm(labels, currentAddress);
             return (opcode << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF);
@@ -419,7 +307,7 @@ public class Bin
         // fills the immediate field with the difference between currentAddress 
         // and the label's address.
         // NOTE: currentAddress is expected to be PC+4 (NOT PC)
-        protected short getImm(Hashtable<String, Long> labels, long currentAddress)
+        protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
             return (short)((addr - currentAddress) >> 2 & 0xFFFF);
@@ -437,7 +325,7 @@ public class Bin
         }
 
         // uses the lower 16 bits of label's address
-        protected short getImm(Hashtable<String, Long> labels, long currentAddress)
+        protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
             return (short)((addr & 0x0000FFFF) >> 0);
@@ -455,7 +343,7 @@ public class Bin
         }
 
         // uses the upper 16 bits of label's address
-        protected short getImm(Hashtable<String, Long> labels, long currentAddress)
+        protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
             return (short)((addr & 0xFFFF0000) >> 16);
@@ -478,7 +366,7 @@ public class Bin
 
         // fills the 26-bit target field with the most important part of the address of the label.
         // if the target is unreachable, throws an exception (TODO)
-        protected long getBinWord(Hashtable<String, Long> labels, long currentAddress)
+        protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             long targetAddress = labels.get(labelName);
             if ((targetAddress & ~TARGET_MASK) != (currentAddress & ~TARGET_MASK))
@@ -515,7 +403,7 @@ public class Bin
         }
 
         // R-format
-        protected long getBinWord(Hashtable<String, Long> labels, long currentAddress)
+        protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             return (opcode << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (shamt << 6) | (funct << 0);
         }
@@ -572,7 +460,7 @@ public class Bin
         }
 
         // takes up no space
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
+        public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             return new byte[0];
         }
@@ -602,7 +490,7 @@ public class Bin
         }
 
         // sum of components
-        public byte[] getBinary(Hashtable<String, Long> labels, long currentAddress)
+        public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             byte[] bytes = new byte[getBinLen()];
             int i = 0;
