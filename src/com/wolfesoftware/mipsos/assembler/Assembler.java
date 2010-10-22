@@ -1,9 +1,7 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.io.*;
 import java.util.*;
-
-import com.wolfesoftware.mipsos.common.*;
 
 //http://www.d.umn.edu/~gshute/spimsal/talref.html
 //http://6004.csail.mit.edu/6.371/handouts/mips6371.pdf
@@ -137,7 +135,7 @@ public class Assembler
             fullSrc += "\n" + inScanner.nextLine();
         }
 
-        // tokenize TODO Document
+        // tokenize
         Token.TokenBase[] tokens;
         try {
             tokens = Tokenizer.tokenize(fullSrc);
@@ -148,7 +146,7 @@ public class Assembler
             throw new CompilingException(srcLocation, line + 1, col + 1, 1, e.message);
         }
 
-        // parse TODO document
+        // parse
         Parser.Binarization binarization;
         try {
             binarization = Parser.parse(tokens, dataAddress, textAddress);

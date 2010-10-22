@@ -1,1 +1,1 @@
-java -cp bin/ com.wolfesoftware.mipsos.mips.assembler.Assembler "$@"
+java -cp bin/ com.wolfesoftware.mipsos.assembler.Assembler "$@"

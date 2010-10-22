@@ -1,4 +1,4 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -6,7 +6,6 @@ import java.io.*;
 
 import javax.swing.*;
 
-import com.wolfesoftware.mipsos.common.AssemblingException;
 
 public class AssemblerDemo extends JApplet
 {

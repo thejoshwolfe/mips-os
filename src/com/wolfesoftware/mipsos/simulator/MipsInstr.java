@@ -1,29 +1,29 @@
-package com.wolfesoftware.mipsos.mips;
+package com.wolfesoftware.mipsos.simulator;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
-public enum EMipsInstr {
+public enum MipsInstr {
     // basic instructions
     ADD, ADDI, AND, ANDI, BEQ, BNE, BREAK, DIV, J, JAL, JALR, JR, LB, LH, LUI, LW, MFHI, MFLO, MTHI, MTLO, MULT, NOP, NOR, OR, ORI, SB, SH, SLL, SLLV, SLT, SLTI, SRA, SRAV, SRL, SRLV, SUB, SW, SYSCALL, XOR, XORI,
     // pseudo instructions
     BGE, BGEZ, BGT, BGTZ, BLE, BLEZ, BLT, BLTZ, LA, LI, MOVE,
     // used in decoding
     Ambiguous, ;
-    // NOTE: no unsigned arithmetic instructions are supported yet (TODO)
+    // TODO: support unsigned arithmetic instructions
 
-    private static Hashtable<EMipsInstr, Integer> hashToOpcode;
-    private static Hashtable<Integer, EMipsInstr> hashFromOpcode;
-    private static Hashtable<EMipsInstr, Integer> hashToFunct;
-    private static Hashtable<Integer, EMipsInstr> hashFromFunct;
-    private static Hashtable<EMipsInstr, String> hashToString;
-    private static Hashtable<String, EMipsInstr> hashFromString;
+    private static HashMap<MipsInstr, Integer> hashToOpcode;
+    private static HashMap<Integer, MipsInstr> hashFromOpcode;
+    private static HashMap<MipsInstr, Integer> hashToFunct;
+    private static HashMap<Integer, MipsInstr> hashFromFunct;
+    private static HashMap<MipsInstr, String> hashToString;
+    private static HashMap<String, MipsInstr> hashFromString;
 
     public Integer toOpcode()
     {
         return hashToOpcode.get(this);
     }
 
-    public static EMipsInstr fromOpcode(int opcode)
+    public static MipsInstr fromOpcode(int opcode)
     {
         return hashFromOpcode.get(opcode);
     }
@@ -33,7 +33,7 @@ public enum EMipsInstr {
         return hashToFunct.get(this);
     }
 
-    public static EMipsInstr fromOpcodeAndFunct(int opcode, int funct)
+    public static MipsInstr fromOpcodeAndFunct(int opcode, int funct)
     {
         if (opcode == 0)
             return hashFromFunct.get(funct);
@@ -41,10 +41,9 @@ public enum EMipsInstr {
             return fromOpcode(opcode);
     }
 
-    static
-    {
+    static {
         // to opcode
-        hashToOpcode = new Hashtable<EMipsInstr, Integer>(40);
+        hashToOpcode = new HashMap<MipsInstr, Integer>(40);
         hashToOpcode.put(ADD, 0x00);
         hashToOpcode.put(ADDI, 0x08);
         hashToOpcode.put(AND, 0x00);
@@ -87,17 +86,16 @@ public enum EMipsInstr {
         hashToOpcode.put(XORI, 0x0E);
 
         // from opcode
-        hashFromOpcode = new Hashtable<Integer, EMipsInstr>(16);
-        hashFromOpcode.put(0x00, EMipsInstr.Ambiguous);
-        for (EMipsInstr instr : hashToOpcode.keySet())
-        {
+        hashFromOpcode = new HashMap<Integer, MipsInstr>(16);
+        hashFromOpcode.put(0x00, MipsInstr.Ambiguous);
+        for (MipsInstr instr : hashToOpcode.keySet()) {
             Integer opcode = hashToOpcode.get(instr);
             if (opcode != 0x00)
                 hashFromOpcode.put(opcode, instr);
         }
 
         // to funct
-        hashToFunct = new Hashtable<EMipsInstr, Integer>(24);
+        hashToFunct = new HashMap<MipsInstr, Integer>(24);
         hashToFunct.put(ADD, 0x20);
         hashToFunct.put(AND, 0x24);
         hashToFunct.put(BREAK, 0x0D);
@@ -124,19 +122,17 @@ public enum EMipsInstr {
         hashToFunct.put(XOR, 0x26);
 
         // from funct
-        hashFromFunct = new Hashtable<Integer, EMipsInstr>(hashToFunct.size());
-        for (EMipsInstr instr : hashToFunct.keySet())
+        hashFromFunct = new HashMap<Integer, MipsInstr>(hashToFunct.size());
+        for (MipsInstr instr : hashToFunct.keySet())
             hashFromFunct.put(hashToFunct.get(instr), instr);
 
         // to/from String
-        EMipsInstr[] instrs = EMipsInstr.values();
-        hashToString = new Hashtable<EMipsInstr, String>(instrs.length);
-        hashFromString = new Hashtable<String, EMipsInstr>(instrs.length);
-        for (EMipsInstr instr : instrs)
-        {
+        MipsInstr[] instrs = MipsInstr.values();
+        hashToString = new HashMap<MipsInstr, String>(instrs.length);
+        hashFromString = new HashMap<String, MipsInstr>(instrs.length);
+        for (MipsInstr instr : instrs) {
             hashToString.put(instr, instr.name());
             hashFromString.put(instr.name(), instr);
         }
     }
-
 }

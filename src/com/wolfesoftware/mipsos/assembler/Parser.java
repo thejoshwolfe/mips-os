@@ -1,8 +1,7 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.util.*;
 
-import com.wolfesoftware.mipsos.mips.ByteUtils;
 
 
 // provides the parse() function for parsing an array of tokens

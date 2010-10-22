@@ -1,7 +1,5 @@
-package com.wolfesoftware.mipsos.mips.simulator;
+package com.wolfesoftware.mipsos.simulator;
 
-import com.wolfesoftware.mipsos.common.*;
-import com.wolfesoftware.mipsos.mips.EMipsInstr;
 
 public class SimulatorCore
 {
@@ -16,11 +14,9 @@ public class SimulatorCore
     /** Lo register */
     private int lo = 0;
     /** Current status */
-    private EStatus status;
+    private SimulatorStatus status;
     /** Current listener */
-    ISimulatorListener listener = null;
-    /** Input waiting to be consumed */
-    private String inputBuffer = "";
+    private ISimulatorListener listener = null;
 
     /** Init with default options */
     public SimulatorCore()
@@ -31,7 +27,6 @@ public class SimulatorCore
     public SimulatorCore(SimulatorOptions options)
     {
         memory = new Memory(options.pageSizeExponent);
-        listener = options.listener;
     }
 
     public void setSimulatorListener(ISimulatorListener listener)
@@ -39,20 +34,18 @@ public class SimulatorCore
         this.listener = listener;
     }
 
-    /** returns the status */
-    public EStatus getStatus()
+    public void storeSegment(int address, byte[] data)
+    {
+        memory.storeSegment(address, data);
+    }
+
+    public SimulatorStatus getStatus()
     {
         return status;
     }
 
-    /** supplies input to the core's input buffer */
-    public void input(String inText)
-    {
-        inputBuffer += inText;
-    }
-
     /** executes one unit of code and returns the status */
-    public EStatus step()
+    public SimulatorStatus step()
     {
         switch (status)
         {
@@ -62,7 +55,7 @@ public class SimulatorCore
             case Ready:
                 int instruction = memory.loadWord(pc);
                 pc += 4;
-                status = EStatus.Ready; // assume success
+                status = SimulatorStatus.Ready; // assume success
                 executeInstruction(instruction);
                 break;
             case NeedInput:
@@ -91,13 +84,12 @@ public class SimulatorCore
         int targetAddress = target << 2;
 
         // get instruction from opcode and maybe funct
-        EMipsInstr instr = EMipsInstr.fromOpcodeAndFunct(opcode, funct);
+        MipsInstr instr = MipsInstr.fromOpcodeAndFunct(opcode, funct);
         if (instr == null)
             throw new RuntimeException(); // TODO
 
         // execute
-        switch (instr)
-        {
+        switch (instr) {
             case ADD:
                 registers[rd] = registers[rs] + registers[rt];
                 break;
@@ -119,7 +111,7 @@ public class SimulatorCore
                     pc += signExtImm;
                 break;
             case BREAK:
-                status = EStatus.Break;
+                status = SimulatorStatus.Break;
                 break;
             case DIV:
                 hi = registers[rs] / registers[rt];
@@ -231,25 +223,14 @@ public class SimulatorCore
 
     private void syscall()
     {
-        // http://www.inf.pucrs.br/~eduardob/disciplinas/arqi/mips/spim/syscall_codes.html
+        // spim syscall codes
         int syscallCode = registers[3];
-        switch (syscallCode)
-        {
-            case 1: // print_int
-                listener.output(Integer.toString(registers[4]));
+        switch (syscallCode) {
+            case 10: // exit
+                status = SimulatorStatus.Done;
                 break;
-            case 4: // print_str
-                listener.output(com.wolfesoftware.mipsos.mips.ByteUtils.readAsciiz(memory, registers[4]));
-                break;
-            case 5:
-                // TODO
-                break;
-            case 8:
-                // TODO
-                break;
-            case 10:
-                status = EStatus.Done;
-                break;
+            case 11: // print_character
+                listener.printCharacter((char)registers[4]);
             default:
                 throw new RuntimeException(); // TODO
         }
@@ -258,18 +239,15 @@ public class SimulatorCore
     public static class SimulatorOptions
     {
         public int pageSizeExponent;
-        public ISimulatorListener listener;
 
         public SimulatorOptions()
         {
-            this(6, null);
+            this(6);
         }
 
-        public SimulatorOptions(int pageSizeExponent, ISimulatorListener listener)
+        public SimulatorOptions(int pageSizeExponent)
         {
             this.pageSizeExponent = pageSizeExponent;
-            this.listener = listener;
         }
     }
-
 }

@@ -1,8 +1,7 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.util.Hashtable;
 
-import com.wolfesoftware.mipsos.mips.ByteUtils;
 
 /**
  * Container for BinBase and its subclasses

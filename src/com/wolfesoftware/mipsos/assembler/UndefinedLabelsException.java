@@ -1,8 +1,7 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.util.ArrayList;
 
-import com.wolfesoftware.mipsos.common.AssemblingException;
 
 public class UndefinedLabelsException extends AssemblingException
 {

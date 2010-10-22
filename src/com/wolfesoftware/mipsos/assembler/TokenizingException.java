@@ -1,6 +1,5 @@
-package com.wolfesoftware.mipsos.mips.assembler;
+package com.wolfesoftware.mipsos.assembler;
 
-import com.wolfesoftware.mipsos.common.AssemblingException;
 
 public class TokenizingException extends AssemblingException
 {

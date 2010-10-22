@@ -1,6 +1,5 @@
-package com.wolfesoftware.mipsos.mips;
+package com.wolfesoftware.mipsos.assembler;
 
-import com.wolfesoftware.mipsos.mips.simulator.Memory;
 
 public final class ByteUtils
 {
@@ -125,20 +124,4 @@ public final class ByteUtils
     {
         return ((bytes[i + 0] & 0xFF) << 24) | ((bytes[i + 1] & 0xFF) << 16) | ((bytes[i + 2] & 0xFF) << 8) | ((bytes[i + 3] & 0xFF) << 0);
     }
-
-    public static String readAsciiz(Memory memory, int i)
-    {
-        byte b;
-        String rtnStr = "";
-        while (true)
-        {
-            b = memory.loadByte(i);
-            if (b == 0)
-                break;
-            rtnStr += (char)b;
-            i++;
-        }
-        return rtnStr;
-    }
-
 }

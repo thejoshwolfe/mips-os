@@ -1,4 +1,4 @@
-package com.wolfesoftware.mipsos.common;
+package com.wolfesoftware.mipsos.assembler;
 
 import java.util.Map;
 

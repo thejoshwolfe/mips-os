@@ -1,20 +1,45 @@
-package com.wolfesoftware.mipsos.mips.simulator;
+package com.wolfesoftware.mipsos.simulator;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 public class Memory
 {
-    private Hashtable<Integer, Integer[]> pages = new Hashtable<Integer, Integer[]>();
+    private final HashMap<Integer, byte[]> pages = new HashMap<Integer, byte[]>();
     private final int pageSizeExponent;
+    private final int pageSize;
 
     public Memory(int pageSizeExponent)
     {
         this.pageSizeExponent = pageSizeExponent;
+        pageSize = 1 << pageSizeExponent;
     }
 
-    public int load(int address)
+    public void storeSegment(int address, byte[] data)
     {
-        return pages.get(address >> pageSizeExponent)[address & (-1 << pageSizeExponent)];
+        int writtenCount = 0;
+        while (writtenCount < data.length) {
+            byte[] page = getPage(address);
+            int pageOffset = getPageOffset(address);
+            int length = Math.min(page.length - pageOffset, data.length - writtenCount);
+            System.arraycopy(data, writtenCount, page, pageOffset, length);
+            writtenCount += length;
+        }
+    }
+
+    private int getPageOffset(int address)
+    {
+        return address & (pageSize - 1);
+    }
+
+    private byte[] getPage(int address)
+    {
+        int pageIndex = address >>> pageSizeExponent;
+        byte[] page = pages.get(pageIndex);
+        if (page == null) {
+            page = new byte[pageSize];
+            pages.put(pageIndex, page);
+        }
+        return page;
     }
 
     public byte loadByte(int address)
@@ -57,11 +82,6 @@ public class Memory
     }
 
     public void storeDword(int address, long value)
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void clearAllSegments()
     {
         // TODO Auto-generated method stub
     }

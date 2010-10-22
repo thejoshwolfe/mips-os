@@ -1,1 +1,1 @@
-java -cp bin/ com.wolfesoftware.mipsos.mips.simulator.Simulator "$@"
+java -cp bin/ com.wolfesoftware.mipsos.simulator.Simulator "$@"
