@@ -1,6 +1,8 @@
 package com.wolfesoftware.mipsos.common;
 
+import java.util.Map;
+
 public interface IAssemblerOptions
 {
-    java.util.Map<String, Integer> getSegmentBaseAddresses();
+    Map<String, Integer> getSegmentBaseAddresses();
 }

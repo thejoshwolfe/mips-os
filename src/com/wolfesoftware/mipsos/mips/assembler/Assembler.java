@@ -310,10 +310,22 @@ public class Assembler
     // prints the intended command line usage of the main function
     private static void printUsage()
     {
-        System.out.print("\n" + "Usage:\n" + "    java Assembler (inputfile) [-o (outputfile)] [-t (textbaseaddress)] [-d (databaseaddress)] [-r]\n" + "\n" + "Example:\n"
-                + "    java Assembler MyMipsProgram.asm -o a.out.txt -t 0x00400000 -v\n" + "\n" + "Args:\n" + "    [inputfile]: name of input file\n" + "    [outputfile]: name of output file\n"
-                + "    [textbaseaddress]: base address of the instructions (int>=0. dec or hex)\n" + "    [databaseaddress]: base address of the data (int>=0. dec or hex)\n" + "\n" + "Options:\n"
-                + "    [-r]: readable. human-readable output\n" + "\n");
+        System.out.print("\n" + //
+                "Usage:\n" + //
+                "    java Assembler (inputfile) [-o (outputfile)] [-t (textbaseaddress)] [-d (databaseaddress)] [-r]\n" + //
+                "\n" + //
+                "Example:\n" + //
+                "    java Assembler MyMipsProgram.asm -o a.out.txt -t 0x00400000 -v\n" + //
+                "\n" + //
+                "Args:\n" + //
+                "    [inputfile]: name of input file\n" + //
+                "    [outputfile]: name of output file\n" + //
+                "    [textbaseaddress]: base address of the instructions (int>=0. dec or hex)\n" + //
+                "    [databaseaddress]: base address of the data (int>=0. dec or hex)\n" + //
+                "\n" + //
+                "Options:\n" + //
+                "    [-r]: readable. human-readable output\n" + //
+                "\n");
     }
 
     // parses an integer in either hex or decimal and and validates the value
@@ -348,68 +360,4 @@ public class Assembler
             }
         };
     }
-
-    // public static IAssembler getAssembler()
-    // {
-    // return new AssemblerImplementation();
-    // }
-    //
-    // private static class AssemblerImplementation implements IAssembler
-    // {
-    // public ILinkable assemble(InputStream input, IAssemblerOptions options)
-    // throws AssemblingException
-    // {
-    // ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    // Map<String, Integer> baseAddresses = options.getSegmentBaseAddresses();
-    // try
-    // {
-    // Assembler.assemble(input, outStream, false, baseAddresses.get(".data"),
-    // baseAddresses.get(".text"));
-    // } catch (IOException e)
-    // {
-    // }// ByteArrayOutputStream will never throw this error
-    // byte[] bytes = outStream.toByteArray();
-    // byte[] subArray;
-    // // BinaryObjectImplementation binObject = new
-    // // BinaryObjectImplementation();
-    //
-    // // read header
-    // int globlOffset = ByteUtils.readInt(bytes, 0);
-    //
-    // // TODO to be continued
-    //
-    // // binObject.dataAddress = options.dataAddress;
-    // // binObject.textAddress = options.textAddress;
-    // return null;
-    // }
-    // }
-    // private static class BinaryObjectImplementation implements IBinaryObject
-    // {
-    // // public BinaryObjectImplementation(String name, ByteSegment
-    // globlSegment, ByteSegment externSegment, int dataAddress, ByteSegment
-    // dataSegment, int textAddress, ByteSegment textSegment)
-    // // {
-    // // this.name = name;
-    // // this.globlSegment = globlSegment;
-    // // this.externSegment = externSegment;
-    // // this.dataAddress = dataAddress;
-    // // this.dataSegment = dataSegment;
-    // // this.textAddress = textAddress;
-    // // this.textSegment = textSegment;
-    // // }
-    // private String name;
-    // public String getName() { return name; }
-    // private ByteSegment globlSegment;
-    // public ByteSegment getGloblSegment() { return globlSegment; }
-    // private ByteSegment externSegment;
-    // public ByteSegment getExternSegment() { return externSegment; }
-    // private int dataAddress;
-    // public int getDataAddress() { return dataAddress; }
-    // private ByteSegment dataSegment;
-    // public ByteSegment getDataSegment() { return dataSegment; }
-    // private int textAddress;
-    // public int getTextAddress() { return textAddress; }
-    // private ByteSegment textSegment;
-    // public ByteSegment getTextSegment() { return textSegment; }
-    // }
 }

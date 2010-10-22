@@ -21,7 +21,7 @@ public class SimulatorDemo extends JApplet
     private JButton btnInput;
 
     // Simulator
-    private ISimulatorCore simCore;
+    private SimulatorCore simCore;
     private SimRunner simRunner;
     private Thread simRunnerThread;
     private EStatus status;
@@ -41,8 +41,7 @@ public class SimulatorDemo extends JApplet
         status = EStatus.Break;
     }
 
-    /** Overridable or something */
-    protected ISimulatorCore getSimulaotrCore()
+    protected SimulatorCore getSimulaotrCore()
     {
         return new SimulatorCore();
     }

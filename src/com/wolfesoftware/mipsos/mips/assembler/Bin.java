@@ -4,7 +4,6 @@ import java.util.Hashtable;
 
 import com.wolfesoftware.mipsos.mips.ByteUtils;
 
-
 /**
  * Container for BinBase and its subclasses
  */

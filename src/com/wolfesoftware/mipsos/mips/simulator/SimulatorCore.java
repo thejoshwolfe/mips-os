@@ -3,12 +3,12 @@ package com.wolfesoftware.mipsos.mips.simulator;
 import com.wolfesoftware.mipsos.common.*;
 import com.wolfesoftware.mipsos.mips.EMipsInstr;
 
-public class SimulatorCore implements ISimulatorCore
+public class SimulatorCore
 {
     /** Register File */
     private int registers[] = new int[32];
     /** Main memory */
-    private IMultisizeMemory memory;
+    private Memory memory;
     /** Program Counter */
     private int pc;
     /** Hi register */
@@ -21,8 +21,6 @@ public class SimulatorCore implements ISimulatorCore
     ISimulatorListener listener = null;
     /** Input waiting to be consumed */
     private String inputBuffer = "";
-    /** The executable to run */
-    private IExecutable executable = null;
 
     /** Init with default options */
     public SimulatorCore()
@@ -33,7 +31,7 @@ public class SimulatorCore implements ISimulatorCore
     public SimulatorCore(SimulatorOptions options)
     {
         memory = new Memory(options.pageSizeExponent);
-        this.listener = options.listener;
+        listener = options.listener;
     }
 
     public void setSimulatorListener(ISimulatorListener listener)
@@ -41,39 +39,19 @@ public class SimulatorCore implements ISimulatorCore
         this.listener = listener;
     }
 
-    public EStatus loadExecutable(IExecutable executable)
-    {
-        if (!isValidExecutable(executable))
-        {
-            status = EStatus.NotInitialized;
-            return status;
-        }
-        this.executable = executable;
-        initExecutable();
-        return status;
-    }
-
-    public EStatus reload()
-    {
-        if (executable == null)
-        {
-            assert (status == EStatus.NotInitialized); // TODO: assert
-            return status;
-        }
-        initExecutable();
-        return status;
-    }
-
+    /** returns the status */
     public EStatus getStatus()
     {
         return status;
     }
 
+    /** supplies input to the core's input buffer */
     public void input(String inText)
     {
         inputBuffer += inText;
     }
 
+    /** executes one unit of code and returns the status */
     public EStatus step()
     {
         switch (status)
@@ -95,20 +73,6 @@ public class SimulatorCore implements ISimulatorCore
                 throw new RuntimeException(); // TODO
         }
         return status;
-    }
-
-    private void initExecutable()
-    {
-        memory.clearAllSegments();
-        for (IDataSegment segment : executable.getDataSegnemnts())
-            memory.initSegment(segment);
-        pc = executable.getEntryPoint();
-        status = EStatus.Ready;
-    }
-
-    private boolean isValidExecutable(IExecutable executable)
-    {
-        return true;
     }
 
     /** has a big switch in it */
