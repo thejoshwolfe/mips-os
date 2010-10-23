@@ -50,8 +50,6 @@ public class SimulatorCore
 
     private void internalStep()
     {
-        if (pc == 4194456 -4)
-            pc = pc;
         int instruction = memory.loadWord(pc);
         pc += 4;
         status = SimulatorStatus.Ready; // assume success
@@ -87,7 +85,7 @@ public class SimulatorCore
         int zeroExtImm = instruction & 0xFFFF;
         int signExtImm = ((zeroExtImm & 0x8000) == 0 ? zeroExtImm : zeroExtImm - 0x10000);
         int target = instruction & 0x02FFFFFF;
-        int targetAddress = target << 2;
+        int targetAddress = (pc & 0xF0000000) | (target << 2);
 
         // get instruction from opcode and maybe funct
         MipsInstr instr = MipsInstr.fromOpcodeAndFunct(opcode, funct);
@@ -107,11 +105,11 @@ public class SimulatorCore
                 break;
             case BEQ:
                 if (registers[rt] == registers[rs])
-                    pc += 4 * signExtImm;
+                    pc += signExtImm << 2;
                 break;
             case BNE:
                 if (registers[rt] != registers[rs])
-                    pc += 4 * signExtImm;
+                    pc += signExtImm << 2;
                 break;
             case BREAK:
                 status = SimulatorStatus.Break;
@@ -121,11 +119,11 @@ public class SimulatorCore
                 lo = registers[rs] % registers[rt];
                 break;
             case J:
-                pc = (pc & 0xF0000000) | (4 * targetAddress);
+                pc = targetAddress;
                 break;
             case JAL:
                 registers[31] = pc;
-                pc = (pc & 0xF0000000) | (4 * targetAddress);
+                pc = targetAddress;
                 break;
             case JALR:
                 registers[rd] = pc;
