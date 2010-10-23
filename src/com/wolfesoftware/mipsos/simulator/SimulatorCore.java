@@ -2,32 +2,23 @@ package com.wolfesoftware.mipsos.simulator;
 
 import com.wolfesoftware.mipsos.common.Segment;
 
-
 public class SimulatorCore
 {
-    /** Register File */
+    // registers
     private int registers[] = new int[32];
-    /** Main memory */
-    private Memory memory;
-    /** Program Counter */
     private int pc;
-    /** Hi register */
     private int hi = 0;
-    /** Lo register */
     private int lo = 0;
-    /** Current status */
-    private SimulatorStatus status = SimulatorStatus.Ready;
-    /** Current listener */
-    private ISimulatorListener listener = null;
 
-    /** Init with default options */
-    public SimulatorCore()
-    {
-        this(new SimulatorOptions());
-    }
+    private Memory memory;
+
+    private SimulatorStatus status = SimulatorStatus.Ready;
+    private ISimulatorListener listener = null;
+    private SimulatorOptions options;
 
     public SimulatorCore(SimulatorOptions options)
     {
+        this.options = options;
         memory = new Memory(options.pageSizeExponent);
     }
 
@@ -59,6 +50,8 @@ public class SimulatorCore
 
     private void internalStep()
     {
+        if (pc == 4194456 -4)
+            pc = pc;
         int instruction = memory.loadWord(pc);
         pc += 4;
         status = SimulatorStatus.Ready; // assume success
@@ -114,11 +107,11 @@ public class SimulatorCore
                 break;
             case BEQ:
                 if (registers[rt] == registers[rs])
-                    pc += signExtImm;
+                    pc += 4 * signExtImm;
                 break;
             case BNE:
                 if (registers[rt] != registers[rs])
-                    pc += signExtImm;
+                    pc += 4 * signExtImm;
                 break;
             case BREAK:
                 status = SimulatorStatus.Break;
@@ -128,11 +121,11 @@ public class SimulatorCore
                 lo = registers[rs] % registers[rt];
                 break;
             case J:
-                pc = (pc & 0xF0000000) | targetAddress;
+                pc = (pc & 0xF0000000) | (4 * targetAddress);
                 break;
             case JAL:
                 registers[31] = pc;
-                pc = (pc & 0xF0000000) | targetAddress;
+                pc = (pc & 0xF0000000) | (4 * targetAddress);
                 break;
             case JALR:
                 registers[rd] = pc;
@@ -236,28 +229,90 @@ public class SimulatorCore
         // spim syscall codes
         int syscallCode = registers[2];
         switch (syscallCode) {
+            case 1: // print_int  $a0 = integer
+                checkFancyIoSupport();
+                for (char c : Integer.toString(registers[4]).toCharArray())
+                    listener.printCharacter(c);
+                break;
+            case 2: // print_float   $f12 = float
+            case 3: // print_double   $f12 = double
+                throw new RuntimeException("floating point operations are not supported");
+            case 4: // print_string   $a0 = string    
+            {
+                checkFancyIoSupport();
+                int cursor = registers[4];
+                while (true) {
+                    byte c = memory.loadByte(cursor);
+                    if (c == 0)
+                        break;
+                    listener.printCharacter((char)c);
+                    cursor++;
+                }
+                break;
+            }
+            case 5: // read_int   integer (in $v0)
+            {
+                checkFancyIoSupport();
+                StringBuilder builder = new StringBuilder();
+                while (true) {
+                    char c = listener.readCharacter();
+                    if (c == '\n')
+                        break;
+                    builder.append(c);
+                }
+                registers[2] = Integer.parseInt(builder.toString());
+                break;
+            }
+            case 6: // read_float   float (in $f0)
+            case 7: // read_double   double (in $f0)
+                throw new RuntimeException("floating point operations are not supported");
+            case 8: // read_string   $a0 = buffer, $a1 = length  
+            {
+                checkFancyIoSupport();
+                int cursor = registers[4];
+                int maxLenght = registers[5];
+                for (int i = 0; i < maxLenght; i++) {
+                    char c = listener.readCharacter();
+                    memory.storeByte(cursor, (byte)c);
+                    if (c == '\n')
+                        break;
+                    cursor++;
+                }
+                break;
+            }
+            case 9: // sbrk   $a0 = amount    address (in $v0) 
+                throw new RuntimeException("sbrk is not supported");
             case 10: // exit
                 status = SimulatorStatus.Done;
                 break;
-            case 11: // print_character
+            case 11: // print_character   $a0 = character
                 listener.printCharacter((char)registers[4]);
+                break;
+            case 12: // read_character   character (in $v0)
+                memory.storeByte(registers[2], (byte)listener.readCharacter());
+                break;
+            case 13: // open   $a0 = filename, $a1 = flags, $a2 = mode   file descriptor (in $v0)
+            case 14: // read   $a0 = file descriptor, $a1 = buffer, $a2 = count   bytes read (in $v0)
+            case 15: // write   $a0 = file descriptor, $a1 = buffer, $a2 = count   bytes written (in $v0)
+            case 16: // close   $a0 = file descriptor   0 (in $v0)
+                throw new RuntimeException("file io is not supported");
+            case 17: // exit2   $a0 = value 
+                throw new RuntimeException("exit2 is not supported");
             default:
                 throw new RuntimeException(); // TODO
         }
     }
 
+    private void checkFancyIoSupport()
+    {
+        if (options.fancyIoSupport)
+            return;
+        throw new RuntimeException("fancy IO is not enabled");
+    }
+
     public static class SimulatorOptions
     {
-        public int pageSizeExponent;
-
-        public SimulatorOptions()
-        {
-            this(6);
-        }
-
-        public SimulatorOptions(int pageSizeExponent)
-        {
-            this.pageSizeExponent = pageSizeExponent;
-        }
+        public int pageSizeExponent = 6;
+        public boolean fancyIoSupport = false;
     }
 }

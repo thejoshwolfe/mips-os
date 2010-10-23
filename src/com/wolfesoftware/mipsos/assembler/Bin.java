@@ -185,8 +185,12 @@ public class Bin
         {
             long binWord = getBinWord(labels, currentAddress);
             // big endian
-            return new byte[] { (byte)((binWord & 0xFF000000) >> 24), (byte)((binWord & 0x00FF0000) >> 16), (byte)((binWord & 0x0000FF00) >> 8), (byte)((binWord & 0x000000FF) >> 0), };
-
+            return new byte[] { //
+                    (byte)((binWord & 0xFF000000) >> 24), //
+                    (byte)((binWord & 0x00FF0000) >> 16), //
+                    (byte)((binWord & 0x0000FF00) >> 8), //
+                    (byte)((binWord & 0x000000FF) >> 0), //
+            };
         }
 
         // list of opcodes
@@ -310,7 +314,7 @@ public class Bin
         protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
-            return (short)((addr - currentAddress) >> 2 & 0xFFFF);
+            return (short)((addr - currentAddress - 1) >> 2 & 0xFFFF);
         }
     }
 
@@ -365,12 +369,12 @@ public class Bin
         }
 
         // fills the 26-bit target field with the most important part of the address of the label.
-        // if the target is unreachable, throws an exception (TODO)
+        // if the target is unreachable, throws an exception
         protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             long targetAddress = labels.get(labelName);
             if ((targetAddress & ~TARGET_MASK) != (currentAddress & ~TARGET_MASK))
-                throw new RuntimeException(); // TODO
+                throw new RuntimeException();
             long target = (targetAddress & TARGET_MASK) >> 2;
             return (opcode << 26) | (target << 0);
         }

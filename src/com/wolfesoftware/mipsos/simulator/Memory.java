@@ -59,8 +59,8 @@ public class Memory
         byte[] page = getPage(address);
         int offset = getPageOffset(address);
         return (short)( //
-                page[offset + 0] << 8 | //
-                page[offset + 1] << 0 //
+                (page[offset + 0] & 0xFF) << 8 | //
+                (page[offset + 1] & 0xFF) << 0 //
         );
     }
 
@@ -77,10 +77,10 @@ public class Memory
         byte[] page = getPage(address);
         int offset = getPageOffset(address);
         return ( //
-                page[offset + 0] << 24 | //
-                page[offset + 1] << 16 | //
-                page[offset + 2] << 8 | //
-                page[offset + 3] << 0 //
+                (page[offset + 0] & 0xFF) << 24 | //
+                (page[offset + 1] & 0xFF) << 16 | //
+                (page[offset + 2] & 0xFF) << 8 | //
+                (page[offset + 3] & 0xFF) << 0 //
         );
     }
 
@@ -99,14 +99,14 @@ public class Memory
         byte[] page = getPage(address);
         int offset = getPageOffset(address);
         return ( //
-                (long)page[offset + 0] << 56 | //
-                (long)page[offset + 1] << 48 | //
-                (long)page[offset + 2] << 40 | //
-                (long)page[offset + 3] << 32 | //
-                (long)page[offset + 4] << 24 | //
-                (long)page[offset + 5] << 16 | //
-                (long)page[offset + 6] << 8 | //
-                (long)page[offset + 7] << 0 //
+                ((long)page[offset + 0] & 0xFF) << 56 | //
+                ((long)page[offset + 1] & 0xFF) << 48 | //
+                ((long)page[offset + 2] & 0xFF) << 40 | //
+                ((long)page[offset + 3] & 0xFF) << 32 | //
+                ((long)page[offset + 4] & 0xFF) << 24 | //
+                ((long)page[offset + 5] & 0xFF) << 16 | //
+                ((long)page[offset + 6] & 0xFF) << 8 | //
+                ((long)page[offset + 7] & 0xFF) << 0 //
         );
     }
 

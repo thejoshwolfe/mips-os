@@ -4,6 +4,7 @@ import java.io.*;
 
 import com.wolfesoftware.mipsos.assembler.*;
 import com.wolfesoftware.mipsos.common.*;
+import com.wolfesoftware.mipsos.simulator.SimulatorCore.SimulatorOptions;
 
 public class Simulator
 {
@@ -13,12 +14,24 @@ public class Simulator
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Assembler.assemble(inStream, outStream, false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
 
-        SimulatorCore simulatorCore = new SimulatorCore();
+        SimulatorOptions options = new SimulatorOptions();
+        options.fancyIoSupport = true;
+        SimulatorCore simulatorCore = new SimulatorCore(options );
         simulatorCore.setSimulatorListener(new ISimulatorListener() {
             @Override
             public void printCharacter(char c)
             {
                 System.out.print(c);
+            }
+            @Override
+            public char readCharacter()
+            {
+                try {
+                    return (char)System.in.read();
+                } catch (IOException e) {
+                    // yeah right.
+                    throw new RuntimeException(e);
+                }
             }
         });
 

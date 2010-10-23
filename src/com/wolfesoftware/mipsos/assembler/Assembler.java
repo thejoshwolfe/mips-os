@@ -221,7 +221,7 @@ public class Assembler
             String[] strBinWords = new String[bytes.length >> 2];
             for (int j = 0; j < bytes.length / 4; j++) {
                 strBinWords[j] = (useAddress ? addrToString(addr) + ": " : blankBinAddr) + bytesWordToString(bytes, j * 4);
-                addr += binElem.getBinLen();
+                addr += 4;
             }
             String comment = fullSrc.substring(tokens[binElem.tokenStart].srcStart, tokens[binElem.tokenEnd - 1].srcEnd);
             String[] commentLines = comment.split("\n");
@@ -236,8 +236,9 @@ public class Assembler
     {
         long addr = baseAddress;
         for (Bin.BinBase binElem : binElems) {
-            outStream.write(binElem.getBinary(labels, addr));
-            addr += binElem.getBinLen();
+            byte[] data = binElem.getBinary(labels, addr);
+            outStream.write(data);
+            addr += data.length;
         }
     }
 
