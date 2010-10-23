@@ -16,15 +16,11 @@ public class SimulatorCore
     private ISimulatorListener listener = null;
     private SimulatorOptions options;
 
-    public SimulatorCore(SimulatorOptions options)
+    public SimulatorCore(SimulatorOptions options, ISimulatorListener listener)
     {
         this.options = options;
-        memory = new Memory(options.pageSizeExponent);
-    }
-
-    public void setSimulatorListener(ISimulatorListener listener)
-    {
         this.listener = listener;
+        memory = new Memory(options.pageSizeExponent);
     }
 
     public void storeSegment(Segment segment)
@@ -54,22 +50,8 @@ public class SimulatorCore
         pc += 4;
         status = SimulatorStatus.Ready; // assume success
         executeInstruction(instruction);
-    }
-
-    /** executes one unit of code and returns the status */
-    public SimulatorStatus step()
-    {
-        switch (status) {
-            case Break:
-            case Ready:
-                internalStep();
-                break;
-            case Done:
-                throw new RuntimeException();
-            default:
-                throw null;
-        }
-        return status;
+        // fix the zero register
+        registers[0] = 0;
     }
 
     /** has a big switch in it */

@@ -16,8 +16,7 @@ public class Simulator
 
         SimulatorOptions options = new SimulatorOptions();
         options.fancyIoSupport = true;
-        SimulatorCore simulatorCore = new SimulatorCore(options );
-        simulatorCore.setSimulatorListener(new ISimulatorListener() {
+        SimulatorCore simulatorCore = new SimulatorCore(options, new ISimulatorListener() {
             @Override
             public void printCharacter(char c)
             {
