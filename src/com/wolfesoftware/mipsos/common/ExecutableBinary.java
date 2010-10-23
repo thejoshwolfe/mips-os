@@ -34,4 +34,9 @@ public class ExecutableBinary
         int executableEntryPoint = ByteUtils.readInt(bytes, 4 * wordCounter++);
         return new ExecutableBinary(dataSegment, textSegment, executableEntryPoint);
     }
+
+    public Segment[] segments()
+    {
+        return new Segment[] { dataSegment, textSegment };
+    }
 }

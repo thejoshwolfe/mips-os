@@ -2,6 +2,8 @@ package com.wolfesoftware.mipsos.simulator;
 
 import java.util.HashMap;
 
+import com.wolfesoftware.mipsos.common.Segment;
+
 public class Memory
 {
     private final HashMap<Integer, byte[]> pages = new HashMap<Integer, byte[]>();
@@ -14,14 +16,14 @@ public class Memory
         pageSize = 1 << pageSizeExponent;
     }
 
-    public void storeSegment(int address, byte[] data)
+    public void storeSegment(Segment segment)
     {
         int writtenCount = 0;
-        while (writtenCount < data.length) {
-            byte[] page = getPage(address);
-            int pageOffset = getPageOffset(address);
-            int length = Math.min(page.length - pageOffset, data.length - writtenCount);
-            System.arraycopy(data, writtenCount, page, pageOffset, length);
+        while (writtenCount < segment.length) {
+            byte[] page = getPage(segment.address + writtenCount);
+            int pageOffset = getPageOffset(segment.address + writtenCount);
+            int length = Math.min(page.length - pageOffset, segment.length - writtenCount);
+            System.arraycopy(segment.bytes, segment.offset + writtenCount, page, pageOffset, length);
             writtenCount += length;
         }
     }
@@ -44,45 +46,81 @@ public class Memory
 
     public byte loadByte(int address)
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return getPage(address)[getPageOffset(address)];
     }
 
     public void storeByte(int address, byte value)
     {
-        // TODO Auto-generated method stub
+        getPage(address)[getPageOffset(address)] = value;
     }
 
     public short loadHalf(int address)
     {
-        // TODO Auto-generated method stub
-        return 0;
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        return (short)( //
+                page[offset + 0] << 8 | //
+                page[offset + 1] << 0 //
+        );
     }
 
     public void storeHalf(int address, short value)
     {
-        // TODO Auto-generated method stub
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        page[offset + 0] = (byte)((value & 0xFF00) >>> 8);
+        page[offset + 1] = (byte)((value & 0x00FF) >>> 0);
     }
 
     public int loadWord(int address)
     {
-        // TODO Auto-generated method stub
-        return 0;
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        return ( //
+                page[offset + 0] << 24 | //
+                page[offset + 1] << 16 | //
+                page[offset + 2] << 8 | //
+                page[offset + 3] << 0 //
+        );
     }
 
     public void storeWord(int address, int value)
     {
-        // TODO Auto-generated method stub
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        page[offset + 0] = (byte)((value & 0xFF000000) >>> 24);
+        page[offset + 1] = (byte)((value & 0x00FF0000) >>> 16);
+        page[offset + 2] = (byte)((value & 0x0000FF00) >>> 8);
+        page[offset + 3] = (byte)((value & 0x000000FF) >>> 0);
     }
 
     public long loadDword(int address)
     {
-        // TODO Auto-generated method stub
-        return 0;
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        return ( //
+                (long)page[offset + 0] << 56 | //
+                (long)page[offset + 1] << 48 | //
+                (long)page[offset + 2] << 40 | //
+                (long)page[offset + 3] << 32 | //
+                (long)page[offset + 4] << 24 | //
+                (long)page[offset + 5] << 16 | //
+                (long)page[offset + 6] << 8 | //
+                (long)page[offset + 7] << 0 //
+        );
     }
 
     public void storeDword(int address, long value)
     {
-        // TODO Auto-generated method stub
+        byte[] page = getPage(address);
+        int offset = getPageOffset(address);
+        page[offset + 0] = (byte)((value & 0xFF00000000000000L) >>> 56);
+        page[offset + 1] = (byte)((value & 0x00FF000000000000L) >>> 48);
+        page[offset + 2] = (byte)((value & 0x0000FF0000000000L) >>> 40);
+        page[offset + 3] = (byte)((value & 0x000000FF00000000L) >>> 32);
+        page[offset + 4] = (byte)((value & 0x00000000FF000000L) >>> 24);
+        page[offset + 5] = (byte)((value & 0x0000000000FF0000L) >>> 16);
+        page[offset + 6] = (byte)((value & 0x000000000000FF00L) >>> 8);
+        page[offset + 7] = (byte)((value & 0x00000000000000FFL) >>> 0);
     }
 }

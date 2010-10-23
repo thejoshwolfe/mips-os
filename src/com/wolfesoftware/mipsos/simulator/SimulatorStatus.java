@@ -1,5 +1,5 @@
 package com.wolfesoftware.mipsos.simulator;
 
 public enum SimulatorStatus {
-	NotInitialized, Ready, NeedInput, Break, Done
+	Ready, NeedInput, Break, Done
 }

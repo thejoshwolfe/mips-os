@@ -1,5 +1,7 @@
 package com.wolfesoftware.mipsos.simulator;
 
+import com.wolfesoftware.mipsos.common.Segment;
+
 
 public class SimulatorCore
 {
@@ -14,7 +16,7 @@ public class SimulatorCore
     /** Lo register */
     private int lo = 0;
     /** Current status */
-    private SimulatorStatus status;
+    private SimulatorStatus status = SimulatorStatus.Ready;
     /** Current listener */
     private ISimulatorListener listener = null;
 
@@ -34,9 +36,14 @@ public class SimulatorCore
         this.listener = listener;
     }
 
-    public void storeSegment(int address, byte[] data)
+    public void storeSegment(Segment segment)
     {
-        memory.storeSegment(address, data);
+        memory.storeSegment(segment);
+    }
+
+    public void setPc(int address)
+    {
+        pc = address;
     }
 
     public SimulatorStatus getStatus()
@@ -44,26 +51,32 @@ public class SimulatorCore
         return status;
     }
 
+    public void run()
+    {
+        while (status != SimulatorStatus.Done)
+            internalStep();
+    }
+
+    private void internalStep()
+    {
+        int instruction = memory.loadWord(pc);
+        pc += 4;
+        status = SimulatorStatus.Ready; // assume success
+        executeInstruction(instruction);
+    }
+
     /** executes one unit of code and returns the status */
     public SimulatorStatus step()
     {
-        switch (status)
-        {
-            case NotInitialized:
-                return status;
+        switch (status) {
             case Break:
             case Ready:
-                int instruction = memory.loadWord(pc);
-                pc += 4;
-                status = SimulatorStatus.Ready; // assume success
-                executeInstruction(instruction);
-                break;
-            case NeedInput:
+                internalStep();
                 break;
             case Done:
-                break;
+                throw new RuntimeException();
             default:
-                throw new RuntimeException(); // TODO
+                throw null;
         }
         return status;
     }
@@ -85,9 +98,6 @@ public class SimulatorCore
 
         // get instruction from opcode and maybe funct
         MipsInstr instr = MipsInstr.fromOpcodeAndFunct(opcode, funct);
-        if (instr == null)
-            throw new RuntimeException(); // TODO
-
         // execute
         switch (instr) {
             case ADD:
@@ -224,7 +234,7 @@ public class SimulatorCore
     private void syscall()
     {
         // spim syscall codes
-        int syscallCode = registers[3];
+        int syscallCode = registers[2];
         switch (syscallCode) {
             case 10: // exit
                 status = SimulatorStatus.Done;

@@ -3,8 +3,7 @@ package com.wolfesoftware.mipsos.assembler;
 
 public final class ByteUtils
 {
-    // converts an array of numbers to an array of bytes stored as an array of
-    // bytes
+    // converts an array of numbers to an array of bytes stored as an array of bytes
     public static byte[] convertByte(long[] bytes)
     {
         byte[] _bytes = new byte[bytes.length];
@@ -13,13 +12,11 @@ public final class ByteUtils
         return _bytes;
     }
 
-    // converts an array of numbers to an array of shorts stored as an array of
-    // bytes
+    // converts an array of numbers to an array of shorts stored as an array of bytes
     public static byte[] convertShort(long[] shorts)
     {
         byte[] bytes = new byte[shorts.length * 2];
-        for (int i = 0; i < shorts.length; i++)
-        {
+        for (int i = 0; i < shorts.length; i++) {
             // big endian
             bytes[i * 2 + 0] = (byte)((shorts[i] & 0xFF00) >> 8);
             bytes[i * 2 + 1] = (byte)((shorts[i] & 0x00FF) >> 0);

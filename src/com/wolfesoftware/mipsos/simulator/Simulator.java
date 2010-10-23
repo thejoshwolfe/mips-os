@@ -3,6 +3,7 @@ package com.wolfesoftware.mipsos.simulator;
 import java.io.*;
 
 import com.wolfesoftware.mipsos.assembler.*;
+import com.wolfesoftware.mipsos.common.*;
 
 public class Simulator
 {
@@ -12,8 +13,8 @@ public class Simulator
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Assembler.assemble(inStream, outStream, false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
 
-        SimulatorCore core = new SimulatorCore();
-        core.setSimulatorListener(new ISimulatorListener() {
+        SimulatorCore simulatorCore = new SimulatorCore();
+        simulatorCore.setSimulatorListener(new ISimulatorListener() {
             @Override
             public void printCharacter(char c)
             {
@@ -21,7 +22,12 @@ public class Simulator
             }
         });
 
-        // TODO
-        outStream.toByteArray();
+        // load single executable
+        ExecutableBinary binary = ExecutableBinary.decode(outStream.toByteArray());
+        for (Segment segment : binary.segments())
+            simulatorCore.storeSegment(segment);
+        simulatorCore.setPc(binary.executableEntryPoint);
+
+        simulatorCore.run();
     }
 }
