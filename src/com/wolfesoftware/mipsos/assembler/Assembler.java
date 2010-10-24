@@ -119,26 +119,25 @@ public class Assembler
      */
     public static void assemble(InputStream inStream, OutputStream outStream, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
     {
-        // OutputStream outStream = options.outStream;
-
         // read input stream
         Scanner inScanner = new Scanner(inStream);
-        String fullSrc = ""; // TODO: use StringBuilder
+        StringBuilder fullSourceBuilder = new StringBuilder();
         ArrayList<Integer> lineIndecies = new ArrayList<Integer>();
         // convert all newlines to '\n'
         if (inScanner.hasNextLine()) { // do the first one specially with no "\n" at the beginning
-            lineIndecies.add(fullSrc.length());
-            fullSrc += inScanner.nextLine();
+            lineIndecies.add(fullSourceBuilder.length());
+            fullSourceBuilder.append(inScanner.nextLine());
         }
         while (inScanner.hasNextLine()) {
-            lineIndecies.add(fullSrc.length());
-            fullSrc += "\n" + inScanner.nextLine();
+            lineIndecies.add(fullSourceBuilder.length());
+            fullSourceBuilder.append('\n').append(inScanner.nextLine());
         }
+        String fullSource = fullSourceBuilder.toString();
 
         // tokenize
         Token.TokenBase[] tokens;
         try {
-            tokens = Tokenizer.tokenize(fullSrc);
+            tokens = Tokenizer.tokenize(fullSource);
         } catch (TokenizingException e) {
             int srcLocation = e.srcLocation;
             int line = findInList(lineIndecies, srcLocation);
@@ -192,10 +191,10 @@ public class Assembler
             }
 
             // .data section
-            verboseOutput(binarization.dataElems, printStream, ".data", dataAddress, binarization.labels, true, tokens, fullSrc);
+            verboseOutput(binarization.dataElems, printStream, ".data", dataAddress, binarization.labels, true, tokens, fullSource);
 
             // .text section
-            verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSrc);
+            verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSource);
         } else {
             // .head section
             outStream.write(binarization.header.getBinary(binarization.labels, 0));

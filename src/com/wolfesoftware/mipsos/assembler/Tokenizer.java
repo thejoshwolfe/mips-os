@@ -1,6 +1,6 @@
 package com.wolfesoftware.mipsos.assembler;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * provides the tokenize() function that takes a String and returns an array of Tokens
@@ -17,6 +17,61 @@ public class Tokenizer
     private static final String PRMT_UnrecognizedRegisterName = "Unrecognized register name.";
     private static final String PRMT_UnrecognizedEscapeSequence = "Unrecognized escape sequence.";
     private static final String PRMT_ExpectedHexDigit = "Expected hex digit.";
+    private static final HashMap<String, Token.InstrName.InstrEnum> stringToInstr = new HashMap<String, Token.InstrName.InstrEnum>();
+    static {
+        stringToInstr.put("add", Token.InstrName.InstrEnum.ADD);
+        stringToInstr.put("addi", Token.InstrName.InstrEnum.ADDI);
+        stringToInstr.put("and", Token.InstrName.InstrEnum.AND);
+        stringToInstr.put("andi", Token.InstrName.InstrEnum.ANDI);
+        stringToInstr.put("beq", Token.InstrName.InstrEnum.BEQ);
+        stringToInstr.put("bne", Token.InstrName.InstrEnum.BNE);
+        stringToInstr.put("break", Token.InstrName.InstrEnum.BREAK);
+        stringToInstr.put("div", Token.InstrName.InstrEnum.DIV);
+        stringToInstr.put("j", Token.InstrName.InstrEnum.J);
+        stringToInstr.put("jal", Token.InstrName.InstrEnum.JAL);
+        stringToInstr.put("jalr", Token.InstrName.InstrEnum.JALR);
+        stringToInstr.put("jr", Token.InstrName.InstrEnum.JR);
+        stringToInstr.put("lb", Token.InstrName.InstrEnum.LB);
+        stringToInstr.put("lh", Token.InstrName.InstrEnum.LH);
+        stringToInstr.put("lui", Token.InstrName.InstrEnum.LUI);
+        stringToInstr.put("lw", Token.InstrName.InstrEnum.LW);
+        stringToInstr.put("mfhi", Token.InstrName.InstrEnum.MFHI);
+        stringToInstr.put("mflo", Token.InstrName.InstrEnum.MFLO);
+        stringToInstr.put("mthi", Token.InstrName.InstrEnum.MTHI);
+        stringToInstr.put("mtlo", Token.InstrName.InstrEnum.MTLO);
+        stringToInstr.put("mul", Token.InstrName.InstrEnum.MUL);
+        stringToInstr.put("mult", Token.InstrName.InstrEnum.MULT);
+        stringToInstr.put("nop", Token.InstrName.InstrEnum.NOP);
+        stringToInstr.put("nor", Token.InstrName.InstrEnum.NOR);
+        stringToInstr.put("or", Token.InstrName.InstrEnum.OR);
+        stringToInstr.put("ori", Token.InstrName.InstrEnum.ORI);
+        stringToInstr.put("sb", Token.InstrName.InstrEnum.SB);
+        stringToInstr.put("sh", Token.InstrName.InstrEnum.SH);
+        stringToInstr.put("sll", Token.InstrName.InstrEnum.SLL);
+        stringToInstr.put("sllv", Token.InstrName.InstrEnum.SLLV);
+        stringToInstr.put("slt", Token.InstrName.InstrEnum.SLT);
+        stringToInstr.put("slti", Token.InstrName.InstrEnum.SLTI);
+        stringToInstr.put("sra", Token.InstrName.InstrEnum.SRA);
+        stringToInstr.put("srav", Token.InstrName.InstrEnum.SRAV);
+        stringToInstr.put("srl", Token.InstrName.InstrEnum.SRL);
+        stringToInstr.put("srlv", Token.InstrName.InstrEnum.SRLV);
+        stringToInstr.put("sub", Token.InstrName.InstrEnum.SUB);
+        stringToInstr.put("sw", Token.InstrName.InstrEnum.SW);
+        stringToInstr.put("syscall", Token.InstrName.InstrEnum.SYSCALL);
+        stringToInstr.put("xor", Token.InstrName.InstrEnum.XOR);
+        stringToInstr.put("xori", Token.InstrName.InstrEnum.XORI);
+        stringToInstr.put("bge", Token.InstrName.InstrEnum.BGE);
+        stringToInstr.put("bgez", Token.InstrName.InstrEnum.BGEZ);
+        stringToInstr.put("bgt", Token.InstrName.InstrEnum.BGT);
+        stringToInstr.put("bgtz", Token.InstrName.InstrEnum.BGTZ);
+        stringToInstr.put("ble", Token.InstrName.InstrEnum.BLE);
+        stringToInstr.put("blez", Token.InstrName.InstrEnum.BLEZ);
+        stringToInstr.put("blt", Token.InstrName.InstrEnum.BLT);
+        stringToInstr.put("bltz", Token.InstrName.InstrEnum.BLTZ);
+        stringToInstr.put("la", Token.InstrName.InstrEnum.LA);
+        stringToInstr.put("li", Token.InstrName.InstrEnum.LI);
+        stringToInstr.put("move", Token.InstrName.InstrEnum.MOVE);
+    }
 
     public static Token.TokenBase[] tokenize(final String src) throws TokenizingException
     {
@@ -399,114 +454,10 @@ public class Tokenizer
             j++;
         }
         String token = src.substring(i, j);
-        Token.InstrName.InstrEnum instr;
-
-        String tokenUpper = token.toUpperCase(); // instructions are case insensitive
-        if (tokenUpper.equals("ADD"))
-            instr = Token.InstrName.InstrEnum.ADD;
-        else if (tokenUpper.equals("ADDI"))
-            instr = Token.InstrName.InstrEnum.ADDI;
-        else if (tokenUpper.equals("AND"))
-            instr = Token.InstrName.InstrEnum.AND;
-        else if (tokenUpper.equals("ANDI"))
-            instr = Token.InstrName.InstrEnum.ANDI;
-        else if (tokenUpper.equals("BEQ"))
-            instr = Token.InstrName.InstrEnum.BEQ;
-        else if (tokenUpper.equals("BNE"))
-            instr = Token.InstrName.InstrEnum.BNE;
-        else if (tokenUpper.equals("BREAK"))
-            instr = Token.InstrName.InstrEnum.BREAK;
-        else if (tokenUpper.equals("DIV"))
-            instr = Token.InstrName.InstrEnum.DIV;
-        else if (tokenUpper.equals("J"))
-            instr = Token.InstrName.InstrEnum.J;
-        else if (tokenUpper.equals("JAL"))
-            instr = Token.InstrName.InstrEnum.JAL;
-        else if (tokenUpper.equals("JALR"))
-            instr = Token.InstrName.InstrEnum.JALR;
-        else if (tokenUpper.equals("JR"))
-            instr = Token.InstrName.InstrEnum.JR;
-        else if (tokenUpper.equals("LB"))
-            instr = Token.InstrName.InstrEnum.LB;
-        else if (tokenUpper.equals("LH"))
-            instr = Token.InstrName.InstrEnum.LH;
-        else if (tokenUpper.equals("LUI"))
-            instr = Token.InstrName.InstrEnum.LUI;
-        else if (tokenUpper.equals("LW"))
-            instr = Token.InstrName.InstrEnum.LW;
-        else if (tokenUpper.equals("MFHI"))
-            instr = Token.InstrName.InstrEnum.MFHI;
-        else if (tokenUpper.equals("MFLO"))
-            instr = Token.InstrName.InstrEnum.MFLO;
-        else if (tokenUpper.equals("MTHI"))
-            instr = Token.InstrName.InstrEnum.MTHI;
-        else if (tokenUpper.equals("MTLO"))
-            instr = Token.InstrName.InstrEnum.MTLO;
-        else if (tokenUpper.equals("MULT"))
-            instr = Token.InstrName.InstrEnum.MULT;
-        else if (tokenUpper.equals("NOP"))
-            instr = Token.InstrName.InstrEnum.NOP;
-        else if (tokenUpper.equals("NOR"))
-            instr = Token.InstrName.InstrEnum.NOR;
-        else if (tokenUpper.equals("OR"))
-            instr = Token.InstrName.InstrEnum.OR;
-        else if (tokenUpper.equals("ORI"))
-            instr = Token.InstrName.InstrEnum.ORI;
-        else if (tokenUpper.equals("SB"))
-            instr = Token.InstrName.InstrEnum.SB;
-        else if (tokenUpper.equals("SH"))
-            instr = Token.InstrName.InstrEnum.SH;
-        else if (tokenUpper.equals("SLL"))
-            instr = Token.InstrName.InstrEnum.SLL;
-        else if (tokenUpper.equals("SLLV"))
-            instr = Token.InstrName.InstrEnum.SLLV;
-        else if (tokenUpper.equals("SLT"))
-            instr = Token.InstrName.InstrEnum.SLT;
-        else if (tokenUpper.equals("SLTI"))
-            instr = Token.InstrName.InstrEnum.SLTI;
-        else if (tokenUpper.equals("SRA"))
-            instr = Token.InstrName.InstrEnum.SRA;
-        else if (tokenUpper.equals("SRAV"))
-            instr = Token.InstrName.InstrEnum.SRAV;
-        else if (tokenUpper.equals("SRL"))
-            instr = Token.InstrName.InstrEnum.SRL;
-        else if (tokenUpper.equals("SRLV"))
-            instr = Token.InstrName.InstrEnum.SRLV;
-        else if (tokenUpper.equals("SUB"))
-            instr = Token.InstrName.InstrEnum.SUB;
-        else if (tokenUpper.equals("SW"))
-            instr = Token.InstrName.InstrEnum.SW;
-        else if (tokenUpper.equals("SYSCALL"))
-            instr = Token.InstrName.InstrEnum.SYSCALL;
-        else if (tokenUpper.equals("XOR"))
-            instr = Token.InstrName.InstrEnum.XOR;
-        else if (tokenUpper.equals("XORI"))
-            instr = Token.InstrName.InstrEnum.XORI;
-        else if (tokenUpper.equals("BGE"))
-            instr = Token.InstrName.InstrEnum.BGE;
-        else if (tokenUpper.equals("BGEZ"))
-            instr = Token.InstrName.InstrEnum.BGEZ;
-        else if (tokenUpper.equals("BGT"))
-            instr = Token.InstrName.InstrEnum.BGT;
-        else if (tokenUpper.equals("BGTZ"))
-            instr = Token.InstrName.InstrEnum.BGTZ;
-        else if (tokenUpper.equals("BLE"))
-            instr = Token.InstrName.InstrEnum.BLE;
-        else if (tokenUpper.equals("BLEZ"))
-            instr = Token.InstrName.InstrEnum.BLEZ;
-        else if (tokenUpper.equals("BLT"))
-            instr = Token.InstrName.InstrEnum.BLT;
-        else if (tokenUpper.equals("BLTZ"))
-            instr = Token.InstrName.InstrEnum.BLTZ;
-        else if (tokenUpper.equals("LA"))
-            instr = Token.InstrName.InstrEnum.LA;
-        else if (tokenUpper.equals("LI"))
-            instr = Token.InstrName.InstrEnum.LI;
-        else if (tokenUpper.equals("MOVE"))
-            instr = Token.InstrName.InstrEnum.MOVE;
-        else {
+        Token.InstrName.InstrEnum instr = stringToInstr.get(token);
+        if (instr == null) {
             // label
-            return new Token.Label(token, i, j); // labels are case sensitive
+            return new Token.Label(token, i, j);
         }
         // instruction
         return new Token.InstrName(instr, i, j);

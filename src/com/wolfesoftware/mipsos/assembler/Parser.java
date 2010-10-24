@@ -441,62 +441,62 @@ public class Parser
 	// returns the syntax format of the passed instruction
 	private static SyntEnum instrToSynt(Token.InstrName.InstrEnum instr)
 	{
-		// see Instr declaration for an explanation of the syntax format
-		switch (instr)
-		{
-		case ADD:     return SyntEnum.RCRCR;
-		case ADDI:    return SyntEnum.RCRC16;
-		case AND:     return SyntEnum.RCRCR;
-		case ANDI:    return SyntEnum.RCRC16;
-		case BEQ:     return SyntEnum.RCRCL;
-		case BNE:     return SyntEnum.RCRCL;
-		case BREAK:   return SyntEnum.None;
-		case DIV:     return SyntEnum.RCR;
-		case J:       return SyntEnum.L;
-		case JAL:     return SyntEnum.L;
-		case JALR:    return SyntEnum.RCR;
-		case JR:      return SyntEnum.R;
-		case LB:      return SyntEnum.RC16PRP;
-		case LH:      return SyntEnum.RC16PRP;
-		case LUI:     return SyntEnum.RC16;
-		case LW:      return SyntEnum.RC16PRP;
-		case MFHI:    return SyntEnum.R;
-		case MFLO:    return SyntEnum.R;
-		case MTHI:    return SyntEnum.R;
-		case MTLO:    return SyntEnum.R;
-		case MULT:    return SyntEnum.RCR;
-		case NOP:     return SyntEnum.None;
-		case NOR:     return SyntEnum.RCRCR;
-		case OR:      return SyntEnum.RCRCR;
-		case ORI:     return SyntEnum.RCRC16;
-		case SB:      return SyntEnum.RC16PRP;
-		case SH:      return SyntEnum.RC16PRP;
-		case SLL:     return SyntEnum.RCRC5;
-		case SLLV:    return SyntEnum.RCRCR;
-		case SLT:     return SyntEnum.RCRCR;
-		case SLTI:    return SyntEnum.RCRC16;
-		case SRA:     return SyntEnum.RCRC5;
-		case SRAV:    return SyntEnum.RCRCR;
-		case SRL:     return SyntEnum.RCRC5;
-		case SRLV:    return SyntEnum.RCRCR;
-		case SUB:     return SyntEnum.RCRCR;
-		case SW:      return SyntEnum.RC16PRP;
-		case SYSCALL: return SyntEnum.None;
-		case XOR:     return SyntEnum.RCRCR;
-		case XORI:    return SyntEnum.RCRC16;
-		case BGE:     return SyntEnum.RCRCL;
-		case BGEZ:    return SyntEnum.RCL;
-		case BGT:     return SyntEnum.RCRCL;
-		case BGTZ:    return SyntEnum.RCL;
-		case BLE:     return SyntEnum.RCRCL;
-		case BLEZ:    return SyntEnum.RCL;
-		case BLT:     return SyntEnum.RCRCL;
-		case BLTZ:    return SyntEnum.RCL;
-		case LA:      return SyntEnum.RCL;
-		case LI:      return SyntEnum.RC32;
-		case MOVE:    return SyntEnum.RCR;
-		default:      return null; // should never happen
-		}
+	    // see Instr declaration for an explanation of the syntax format
+	    switch (instr) {
+	        case ADD:     return SyntEnum.RCRCR;
+	        case ADDI:    return SyntEnum.RCRC16;
+	        case AND:     return SyntEnum.RCRCR;
+	        case ANDI:    return SyntEnum.RCRC16;
+	        case BEQ:     return SyntEnum.RCRCL;
+	        case BNE:     return SyntEnum.RCRCL;
+	        case BREAK:   return SyntEnum.None;
+	        case DIV:     return SyntEnum.RCR;
+	        case J:       return SyntEnum.L;
+	        case JAL:     return SyntEnum.L;
+	        case JALR:    return SyntEnum.RCR;
+	        case JR:      return SyntEnum.R;
+	        case LB:      return SyntEnum.RC16PRP;
+	        case LH:      return SyntEnum.RC16PRP;
+	        case LUI:     return SyntEnum.RC16;
+	        case LW:      return SyntEnum.RC16PRP;
+	        case MFHI:    return SyntEnum.R;
+	        case MFLO:    return SyntEnum.R;
+	        case MTHI:    return SyntEnum.R;
+	        case MTLO:    return SyntEnum.R;
+            case MUL:     return SyntEnum.RCRCR;
+	        case MULT:    return SyntEnum.RCR;
+	        case NOP:     return SyntEnum.None;
+	        case NOR:     return SyntEnum.RCRCR;
+	        case OR:      return SyntEnum.RCRCR;
+	        case ORI:     return SyntEnum.RCRC16;
+	        case SB:      return SyntEnum.RC16PRP;
+	        case SH:      return SyntEnum.RC16PRP;
+	        case SLL:     return SyntEnum.RCRC5;
+	        case SLLV:    return SyntEnum.RCRCR;
+	        case SLT:     return SyntEnum.RCRCR;
+	        case SLTI:    return SyntEnum.RCRC16;
+	        case SRA:     return SyntEnum.RCRC5;
+	        case SRAV:    return SyntEnum.RCRCR;
+	        case SRL:     return SyntEnum.RCRC5;
+	        case SRLV:    return SyntEnum.RCRCR;
+	        case SUB:     return SyntEnum.RCRCR;
+	        case SW:      return SyntEnum.RC16PRP;
+	        case SYSCALL: return SyntEnum.None;
+	        case XOR:     return SyntEnum.RCRCR;
+	        case XORI:    return SyntEnum.RCRC16;
+	        case BGE:     return SyntEnum.RCRCL;
+	        case BGEZ:    return SyntEnum.RCL;
+	        case BGT:     return SyntEnum.RCRCL;
+	        case BGTZ:    return SyntEnum.RCL;
+	        case BLE:     return SyntEnum.RCRCL;
+	        case BLEZ:    return SyntEnum.RCL;
+	        case BLT:     return SyntEnum.RCRCL;
+	        case BLTZ:    return SyntEnum.RCL;
+	        case LA:      return SyntEnum.RCL;
+	        case LI:      return SyntEnum.RC32;
+	        case MOVE:    return SyntEnum.RCR;
+	        default:      return null; // should never happen
+	    }
 	}
 
 	// generates a binary element with no operands
@@ -697,6 +697,11 @@ public class Parser
 		case NOR:
 		case SLT:
 			return new Bin.InstrR(instr, reg1.regNum, reg2.regNum, reg3.regNum, 0, tokenStart, tokenEnd);
+		case MUL:
+            return new Bin.Pseudo(new Bin.Instr[] {
+                    new Bin.InstrR(Token.InstrName.InstrEnum.MULT, reg2.regNum, reg3.regNum, 0, 0, tokenStart, tokenEnd),
+                    new Bin.InstrR(Token.InstrName.InstrEnum.MFLO, 0, 0, reg1.regNum, 0, tokenStart, tokenEnd),
+            }, tokenStart, tokenEnd);
 		default:
 			return null;
 		}
