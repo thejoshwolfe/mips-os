@@ -7,33 +7,29 @@ prmtN:	.asciiz "Enter n: "
 
 .text
 main:
-	# print headA
-	li	$v0,	4
+	# print(headA)
 	la	$a0,	headA
-	syscall
+	jal print_asciiz
 
-	# print prmtM
-	li	$v0,	4
+	# print(prmtM)
 	la	$a0,	prmtM
-	syscall
+	jal print_asciiz
 
-	# read_int M
-	li	$v0,	5
-	syscall
+	# $s0 = read_int()
+	jal read_int
 	move	$s0,	$v0
 
-	# print prmtN
-	li	$v0,	4
+	# print(prmtN)
 	la	$a0,	prmtN
-	syscall
+	jal print_asciiz
 
-	# read_int N
-	li	$v0,	5
-	syscall
+	# $s1 = read_int()
+	jal read_int
+	move	$s1,	$v0
+
+	# Acker($s0, $s1)
 	move	$a0,	$s0
-	move	$a1,	$v0
-
-	# Acker()
+	move	$a1,	$s1
 	jal	Acker
 
 
@@ -93,4 +89,36 @@ Acker:
 
 	jr	$ra			# return
 
-#end of question1.s
+
+print_asciiz:
+	# make stack space
+	addi	$sp,	$sp,	-8	# stack[2] = {
+	sw	$s0,	4($sp)		#     $s0,
+	sw	$ra,	0($sp)		#     $ra};
+	move	$s0,	$a0		# int cursor;
+
+ print_asciiz__loop:
+	lb	$t0,	0($s0)
+	beq	$t0,	$zero,	dl_stk
+	# print_character
+	li	$v0,	11
+	move	$a0,	$t0
+	syscall
+	j print_asciiz__loop
+
+ print_asciiz__dl_stk:
+	# delete stack space
+	lw	$s0,	4($sp)		# restore $s0
+	lw	$ra,	0($sp)		# restore $ra
+	addi	$sp,	$sp,	8	# free stack
+
+	jr	$ra			# return
+
+
+read_int:
+	# make stack space
+	addi	$sp,	$sp,	-8	# stack[2] = {
+	sw	$s0,	4($sp)		#     $s0,
+	sw	$ra,	0($sp)		#     $ra};
+	move	$s0,	$a0		# int cursor;
+

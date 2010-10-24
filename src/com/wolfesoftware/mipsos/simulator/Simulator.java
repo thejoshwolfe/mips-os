@@ -9,12 +9,29 @@ public class Simulator
 {
     public static void main(String[] args) throws AssemblingException, IOException
     {
-        InputStream inStream = new FileInputStream(args[0]);
+        // parse the args
+        String source = null;
+        SimulatorOptions options = new SimulatorOptions();
+
+        for (String arg : args) {
+            if (arg.equals("--fancy"))
+                options.fancyIoSupport = true;
+            else {
+                if (source != null)
+                    throw new RuntimeException();
+                source = arg;
+            }
+        }
+        if (source == null)
+            throw new RuntimeException();
+
+        // assemble source
+        InputStream inStream = new FileInputStream(source);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Assembler.assemble(inStream, outStream, false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
+        ExecutableBinary binary = ExecutableBinary.decode(outStream.toByteArray());
 
-        SimulatorOptions options = new SimulatorOptions();
-        options.fancyIoSupport = true;
+        // init the simulator
         SimulatorCore simulatorCore = new SimulatorCore(options, new ISimulatorListener() {
             @Override
             public void printCharacter(char c)
@@ -32,12 +49,10 @@ public class Simulator
                 }
             }
         });
-
-        // load single executable
-        ExecutableBinary binary = ExecutableBinary.decode(outStream.toByteArray());
         for (Segment segment : binary.segments())
             simulatorCore.storeSegment(segment);
         simulatorCore.setPc(binary.executableEntryPoint);
+
 
         simulatorCore.run();
     }

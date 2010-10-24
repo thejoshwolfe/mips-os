@@ -239,7 +239,7 @@ public class SimulatorCore
                         break;
                     builder.append(c);
                 }
-                registers[2] = Integer.parseInt(builder.toString());
+                registers[2] = Integer.parseInt(builder.toString().trim());
                 break;
             }
             case 6: // read_float   float (in $f0)
