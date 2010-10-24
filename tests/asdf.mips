@@ -1,9 +1,9 @@
 
 .data
 
-headA:	.asciiz "This function computes the Ackerman Function A(m,n)\n" 
-prmtM:	.asciiz "Enter m: " 
-prmtN:	.asciiz "Enter n: " 
+headA:	.asciiz "This function computes the Ackerman Function A(m,n)\n"
+prmtM:	.asciiz "Enter m: "
+prmtN:	.asciiz "Enter n: "
 
 .text
 main:
@@ -98,12 +98,15 @@ print_asciiz:
 	move	$s0,	$a0		# int cursor;
 
  print_asciiz__loop:
+ 	# if ((c = *cursor) == '\0') break;
 	lb	$t0,	0($s0)
 	beq	$t0,	$zero,	dl_stk
-	# print_character
+	# print_character(c);
 	li	$v0,	11
 	move	$a0,	$t0
 	syscall
+	# cursor++;
+	addi $s0, $s0, 1
 	j print_asciiz__loop
 
  print_asciiz__dl_stk:
@@ -115,10 +118,73 @@ print_asciiz:
 	jr	$ra			# return
 
 
+.data
+# allow 20 chars to be read at a time. the bounds are unchecked. oh well.
+read_int__buffer: .ascii "01234567890123456789"
+
+.text
 read_int:
 	# make stack space
-	addi	$sp,	$sp,	-8	# stack[2] = {
-	sw	$s0,	4($sp)		#     $s0,
-	sw	$ra,	0($sp)		#     $ra};
-	move	$s0,	$a0		# int cursor;
+	addi $sp, $sp, -8 # stack[2] = {
+	sw $s0, 4($sp)    #     $s0,
+	sw $ra, 0($sp)    #     $ra};
+
+	# char * end_cursor = buffer;
+	la $s0, read_int__buffer
+
+ read_int__read_loop:
+	# c = read_character()
+	li $v0, 12
+	syscall
+	move $t0, $v0
+
+	# if (c == '\n') break;
+	li $t1, 10
+	beq $t0, $t1, read_int__read_break
+
+	# *(end_cursor++) = c;
+	sb $t0, 0($s0)
+	addi $s0, $s0, 1
+	j read_int__read_loop
+
+ read_int__read_break:
+ 	# end_cursor--;
+	addi $s0, $s0, -1
+
+ 	# stupid windows line endings.
+	# if (*end_cursor == '\r') end_cursor--;
+	lb $t0, 0($s0)
+	li $t1, 13
+	bne $t0, $t1, read_int__after_windows_check
+	addi $s0, $s0, -1
+ read_int__after_windows_check:
+
+	# int value = 0;
+	li $t0, 0
+	# char * cursor = buffer;
+	la $t1, read_int__buffer
+	# int _10 = 10;
+	li $t2, 10
+
+ read_int__value_loop:
+	# value *= 10
+	mul $t0, $t0, $t2
+	# int digit = (*cursor) - '0'
+	lb $t4, 0($t1)
+	addi $t4, $t4, 48
+	# value += digit
+	add $t0, $t0, $t4
+	# if (cursor == end_cursor) break;
+	beq $t1, $s0, read_int__value_break
+	# cursor++;
+	addi $t1, $t1, 1
+
+ read_int__value_break:
+	# return value;
+	move $v0, $t0
+	# delete stack space
+	lw $s0, 4($sp)   # restore $s0
+	lw $ra, 0($sp)   # restore $ra
+	addi $sp, $sp, 8 # free stack
+	jr	$ra
 
