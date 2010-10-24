@@ -18,7 +18,8 @@ public class CompilingException extends AssemblingException
 		this.startCol = startCol;
 		this.len = len;
 	}
-	public String getMessage()
+	@Override
+    public String getMessage()
 	{
 		return message + "\n" + 
 				"\tSource Location: (" + startLine + "," + startCol + "):" + len + "\n";

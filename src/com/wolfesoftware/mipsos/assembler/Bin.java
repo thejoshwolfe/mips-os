@@ -73,11 +73,13 @@ public class Bin
             }
         }
 
+        @Override
         public int getBinLen()
         {
             return bytes.length;
         }
 
+        @Override
         public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             return bytes;
@@ -137,12 +139,14 @@ public class Bin
             this.textLen = textLen;
         }
 
+        @Override
         public int getBinLen()
         {
             return getBinary(null, 0).length;
         }
 
         // outputs the 8 ints one right after the other
+        @Override
         public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             return ByteUtils.convertToInts(new long[] { //
@@ -175,12 +179,14 @@ public class Bin
         protected abstract long getBinWord(HashMap<String, Long> labels, long currentAddress);
 
         // all non-pseudo instructions are 1 word
+        @Override
         public int getBinLen()
         {
             return 4;
         }
 
         // implemented for all instruction elements
+        @Override
         public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             long binWord = getBinWord(labels, currentAddress);
@@ -260,6 +266,7 @@ public class Bin
         }
 
         // I-format
+        @Override
         protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             return (opcode << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF);
@@ -285,12 +292,14 @@ public class Bin
         protected abstract short getImm(HashMap<String, Long> labels, long currentAddress);
 
         // I-format after filling the immediate field with getImm()
+        @Override
         protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             imm = getImm(labels, currentAddress);
             return (opcode << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF);
         }
 
+        @Override
         public String[] getLabelDependencies()
         {
             return new String[] { labelName };
@@ -311,6 +320,7 @@ public class Bin
         // fills the immediate field with the difference between currentAddress 
         // and the label's address.
         // NOTE: currentAddress is expected to be PC+4 (NOT PC)
+        @Override
         protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
@@ -329,6 +339,7 @@ public class Bin
         }
 
         // uses the lower 16 bits of label's address
+        @Override
         protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
@@ -347,6 +358,7 @@ public class Bin
         }
 
         // uses the upper 16 bits of label's address
+        @Override
         protected short getImm(HashMap<String, Long> labels, long currentAddress)
         {
             long addr = labels.get(labelName);
@@ -370,6 +382,7 @@ public class Bin
 
         // fills the 26-bit target field with the most important part of the address of the label.
         // if the target is unreachable, throws an exception
+        @Override
         protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             long targetAddress = labels.get(labelName);
@@ -379,6 +392,7 @@ public class Bin
             return (opcode << 26) | (target << 0);
         }
 
+        @Override
         public String[] getLabelDependencies()
         {
             return new String[] { labelName };
@@ -407,6 +421,7 @@ public class Bin
         }
 
         // R-format
+        @Override
         protected long getBinWord(HashMap<String, Long> labels, long currentAddress)
         {
             return (opcode << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (shamt << 6) | (funct << 0);
@@ -458,12 +473,14 @@ public class Bin
         }
 
         // takes up no space
+        @Override
         public int getBinLen()
         {
             return 0;
         }
 
         // takes up no space
+        @Override
         public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             return new byte[0];
@@ -485,6 +502,7 @@ public class Bin
         }
 
         // sum of components
+        @Override
         public int getBinLen()
         {
             int rtnVal = 0;
@@ -494,6 +512,7 @@ public class Bin
         }
 
         // sum of components
+        @Override
         public byte[] getBinary(HashMap<String, Long> labels, long currentAddress)
         {
             byte[] bytes = new byte[getBinLen()];
@@ -505,6 +524,7 @@ public class Bin
             return bytes;
         }
 
+        @Override
         public String[] getLabelDependencies()
         {
             java.util.ArrayList<String> labels = new java.util.ArrayList<String>();

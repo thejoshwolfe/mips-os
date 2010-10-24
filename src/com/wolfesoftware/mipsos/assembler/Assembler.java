@@ -330,6 +330,7 @@ public class Assembler
     public static IAssemblerOptions makeDefaultOptions()
     {
         return new IAssemblerOptions() {
+            @Override
             public Map<String, Integer> getSegmentBaseAddresses()
             {
                 Map<String, Integer> baseAddresses = new HashMap<String, Integer>(2);

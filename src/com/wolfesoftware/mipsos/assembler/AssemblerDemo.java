@@ -6,7 +6,6 @@ import java.io.*;
 
 import javax.swing.*;
 
-
 public class AssemblerDemo extends JApplet
 {
     // GUI
@@ -21,6 +20,7 @@ public class AssemblerDemo extends JApplet
     private JButton btnAssem;
 
     // init
+    @Override
     public void init()
     {
         // Applet
@@ -57,6 +57,7 @@ public class AssemblerDemo extends JApplet
         btnAssem = new JButton("Assemble!");
         btnAssem.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnAssem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent arg0)
             {
                 assemble();

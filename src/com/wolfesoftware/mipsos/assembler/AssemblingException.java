@@ -7,7 +7,8 @@ public class AssemblingException extends Exception
 	{
 		this.message = message;
 	}
-	public String getMessage()
+	@Override
+    public String getMessage()
 	{
 		return message;
 	}

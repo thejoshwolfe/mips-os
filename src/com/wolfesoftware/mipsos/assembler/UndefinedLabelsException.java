@@ -16,7 +16,8 @@ public class UndefinedLabelsException extends AssemblingException
 		super(PRMT_UndefinedLabels);
 		this.missingLabels = missingLabels;
 	}
-	public String getMessage()
+	@Override
+    public String getMessage()
 	{
 		String outMsg = message + "\n";
 		for (String label : missingLabels)
