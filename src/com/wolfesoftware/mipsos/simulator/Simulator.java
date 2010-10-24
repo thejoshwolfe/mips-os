@@ -3,7 +3,6 @@ package com.wolfesoftware.mipsos.simulator;
 import java.io.*;
 
 import com.wolfesoftware.mipsos.assembler.*;
-import com.wolfesoftware.mipsos.common.*;
 import com.wolfesoftware.mipsos.simulator.SimulatorCore.SimulatorOptions;
 
 public class Simulator

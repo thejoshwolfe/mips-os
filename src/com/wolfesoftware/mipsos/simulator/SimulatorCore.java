@@ -1,6 +1,5 @@
 package com.wolfesoftware.mipsos.simulator;
 
-import com.wolfesoftware.mipsos.common.Segment;
 
 public class SimulatorCore
 {

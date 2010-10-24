@@ -2,7 +2,6 @@ package com.wolfesoftware.mipsos.simulator;
 
 import java.util.HashMap;
 
-import com.wolfesoftware.mipsos.common.Segment;
 
 public class Memory
 {
