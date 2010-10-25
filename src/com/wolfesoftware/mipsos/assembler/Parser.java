@@ -55,7 +55,9 @@ public class Parser
                     Bin.Label binDataLabel = parseLabel(tokens, i);
                     if (binDataLabel != null) {
                         // found .data Label declaration
-                        labels.put(binDataLabel.labelName, (long)runningDataAddress); // store this label's address
+                        if (labels.containsKey(binDataLabel.labelName))
+                            throw new ParsingException(i - 1, "Duplicate label: " + binDataLabel.labelName + ".");
+                        labels.put(binDataLabel.labelName, (long)runningDataAddress);
                         dataElems.add(binDataLabel);
                         i = binDataLabel.tokenEnd;
                         continue;
@@ -84,7 +86,9 @@ public class Parser
                     Bin.Label binTextLabel = parseLabel(tokens, i);
                     if (binTextLabel != null) {
                         // found a .text Label declaration
-                        labels.put(binTextLabel.labelName, (long)runningTextAddress); // store the label's address
+                        if (labels.containsKey(binTextLabel.labelName))
+                            throw new ParsingException(i - 1, "Duplicate label: " + binTextLabel.labelName + ".");
+                        labels.put(binTextLabel.labelName, (long)runningTextAddress);
                         textElems.add(binTextLabel);
                         i = binTextLabel.tokenEnd;
                         continue;
