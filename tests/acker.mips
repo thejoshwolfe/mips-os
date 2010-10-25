@@ -33,10 +33,9 @@ main:
 	jal	Acker
 
 
-	# print_int $v0
+	# print_int($v0)
 	move	$a0,	$v0
-	li	$v0,	1
-	syscall
+	jal print_int
 	# print_char '\n'
 	li	$a0,	10
 	li	$v0,	11
@@ -185,6 +184,52 @@ read_int:
  read_int__value_break:
 	# return value;
 	move $v0, $t0
+	# delete stack space
+	lw $s0, 4($sp)   # restore $s0
+	lw $ra, 0($sp)   # restore $ra
+	addi $sp, $sp, 8 # free stack
+	jr	$ra
+
+
+print_int:
+	# make stack space
+	addi $sp, $sp, -8 # stack[2] = {
+	sw $s0, 4($sp)    #     $s0,
+	sw $ra, 0($sp)    #     $ra};
+	# int value = $a0;
+	move $s0, $a0
+
+	# bool must_print = false;
+	li $t0, 0
+	# int factor = 1000000000;
+	li $t1, 1000000000
+	# const int _10 = 10;
+	li $t3, 10
+
+ print_int__loop:
+	# digit = value / factor;
+	# value = value % factor;
+	div $s0, $t1
+	mflo $t2
+	mfhi $s0
+	# if (must_print || digit != 0)
+	bne $t0, $zero, print_int__print_digit
+	beq $t2, $zero, print_int__done_printing
+  print_int__print_digit:
+	# print_character(digit + '0')
+	li $v0, 11
+	addi $a0, $t2, 48
+	syscall
+	# must_print = true
+	li $t0, 1
+
+  print_int__done_printing:
+	# factor = factor / 10;
+	div $t1, $t3
+	mflo $t1
+	# if (factor != 0) continue; else break;
+	bne $t1, $zero, print_int__loop
+
 	# delete stack space
 	lw $s0, 4($sp)   # restore $s0
 	lw $ra, 0($sp)   # restore $ra

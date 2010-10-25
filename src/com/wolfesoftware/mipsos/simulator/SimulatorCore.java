@@ -96,8 +96,8 @@ public class SimulatorCore
                 status = SimulatorStatus.Break;
                 break;
             case DIV:
-                hi = registers[rs] / registers[rt];
-                lo = registers[rs] % registers[rt];
+                lo = registers[rs] / registers[rt];
+                hi = registers[rs] % registers[rt];
                 break;
             case J:
                 pc = targetAddress;
