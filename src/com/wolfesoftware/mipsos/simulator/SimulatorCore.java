@@ -45,8 +45,6 @@ public class SimulatorCore
 
     private void internalStep()
     {
-        if (pc == 0x400178)
-            pc = pc;
         int instruction = memory.loadWord(pc);
         pc += 4;
         status = SimulatorStatus.Ready; // assume success
@@ -64,7 +62,7 @@ public class SimulatorCore
         int rt = instruction >> 16 & 0x1F;
         int rd = instruction >> 11 & 0x1F;
         int shamt = instruction >> 6 & 0x1F;
-        int funct = instruction & 0x2F;
+        int funct = instruction & 0x1F;
         int zeroExtImm = instruction & 0xFFFF;
         int signExtImm = ((zeroExtImm & 0x8000) == 0 ? zeroExtImm : zeroExtImm - 0x10000);
         int target = instruction & 0x02FFFFFF;
