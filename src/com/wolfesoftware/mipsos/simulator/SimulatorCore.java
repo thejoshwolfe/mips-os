@@ -45,6 +45,8 @@ public class SimulatorCore
 
     private void internalStep()
     {
+        if (pc == 0x400178)
+            pc = pc;
         int instruction = memory.loadWord(pc);
         pc += 4;
         status = SimulatorStatus.Ready; // assume success
@@ -259,7 +261,7 @@ public class SimulatorCore
                 }
                 break;
             }
-            case 9: // sbrk   $a0 = amount    address (in $v0) 
+            case 9: // sbrk   $a0 = amount    address (in $v0)
                 throw new RuntimeException("sbrk is not supported");
             case 10: // exit
                 status = SimulatorStatus.Done;
@@ -268,7 +270,7 @@ public class SimulatorCore
                 listener.printCharacter((char)registers[4]);
                 break;
             case 12: // read_character   character (in $v0)
-                memory.storeByte(registers[2], (byte)listener.readCharacter());
+                registers[2] = listener.readCharacter();
                 break;
             case 13: // open   $a0 = filename, $a1 = flags, $a2 = mode   file descriptor (in $v0)
             case 14: // read   $a0 = file descriptor, $a1 = buffer, $a2 = count   bytes read (in $v0)
@@ -278,7 +280,7 @@ public class SimulatorCore
             case 17: // exit2   $a0 = value 
                 throw new RuntimeException("exit2 is not supported");
             default:
-                throw new RuntimeException(); // TODO
+                throw new RuntimeException("illegal syscall code");
         }
     }
 

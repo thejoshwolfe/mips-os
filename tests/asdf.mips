@@ -168,6 +168,8 @@ read_int:
 
  read_int__value_loop:
 	# value *= 10
+	mult $t0, $t2
+	mflo $t0
 	mul $t0, $t0, $t2
 	# int digit = (*cursor) - '0'
 	lb $t4, 0($t1)
@@ -178,6 +180,7 @@ read_int:
 	beq $t1, $s0, read_int__value_break
 	# cursor++;
 	addi $t1, $t1, 1
+	j read_int__value_loop
 
  read_int__value_break:
 	# return value;
