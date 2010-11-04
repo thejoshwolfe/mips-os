@@ -1,26 +1,26 @@
 
 .data
 
-headA: .asciiz "This function computes the Ackerman Function A(m,n)\n"
-prmtM: .asciiz "Enter m: "
-prmtN: .asciiz "Enter n: "
+this_function_message: .asciiz "This function computes the Ackerman Function A(m,n)\n"
+enter_m_message: .asciiz "Enter m: "
+enter_n_message: .asciiz "Enter n: "
 
 .text
 main:
-    # print(headA)
-    la $a0, headA
+    # print(this_function_message)
+    la $a0, this_function_message
     jal print_asciiz
 
-    # print(prmtM)
-    la $a0, prmtM
+    # print(enter_m_message)
+    la $a0, enter_m_message
     jal print_asciiz
 
     # $s0 = read_int()
     jal read_int
     move $s0, $v0
 
-    # print(prmtN)
-    la $a0, prmtN
+    # print(enter_n_message)
+    la $a0, enter_n_message
     jal print_asciiz
 
     # $s1 = read_int()
