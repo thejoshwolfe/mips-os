@@ -15,15 +15,15 @@ public class Memory
         pageSize = 1 << pageSizeExponent;
     }
 
-    public void storeSegment(Segment segment)
+    public void storeBytes(byte[] bytes, int offset, int length, int address)
     {
         int writtenCount = 0;
-        while (writtenCount < segment.length) {
-            byte[] page = getPage(segment.address + writtenCount);
-            int pageOffset = getPageOffset(segment.address + writtenCount);
-            int length = Math.min(page.length - pageOffset, segment.length - writtenCount);
-            System.arraycopy(segment.bytes, segment.offset + writtenCount, page, pageOffset, length);
-            writtenCount += length;
+        while (writtenCount < length) {
+            byte[] page = getPage(address + writtenCount);
+            int pageOffset = getPageOffset(address + writtenCount);
+            int chunkLength = Math.min(page.length - pageOffset, length - writtenCount);
+            System.arraycopy(bytes, offset + writtenCount, page, pageOffset, chunkLength);
+            writtenCount += chunkLength;
         }
     }
 

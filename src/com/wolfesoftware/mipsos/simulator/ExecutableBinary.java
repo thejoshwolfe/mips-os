@@ -10,52 +10,44 @@ import com.wolfesoftware.mipsos.assembler.ByteUtils;
 public class ExecutableBinary
 {
     private static final int MAGIC_NUMBER = 0x981dc595;
-    public final Segment dataSegment;
-    public final Segment textSegment;
+    public final Segment[] segments;
     public final int executableEntryPoint;
-    public ExecutableBinary(Segment dataSegment, Segment textSegment, int executableEntryPoint)
+    public ExecutableBinary(Segment[] segments, int executableEntryPoint)
     {
-        this.dataSegment = dataSegment;
-        this.textSegment = textSegment;
+        this.segments = segments;
         this.executableEntryPoint = executableEntryPoint;
     }
 
     public void encode(OutputStream outStream) throws IOException
     {
-        // header
-        ByteUtils.writeInt(outStream, 7 * 4);
-        ByteUtils.writeInt(outStream, dataSegment.address);
-        ByteUtils.writeInt(outStream, dataSegment.length);
-        ByteUtils.writeInt(outStream, 7 * 4 + dataSegment.length);
-        ByteUtils.writeInt(outStream, textSegment.address);
-        ByteUtils.writeInt(outStream, textSegment.length);
+        // magic number
+        ByteUtils.writeInt(outStream, MAGIC_NUMBER);
+
+        // entry point
         ByteUtils.writeInt(outStream, executableEntryPoint);
 
-        outStream.write(dataSegment.bytes, dataSegment.offset, dataSegment.length);
-
-        outStream.write(textSegment.bytes, textSegment.offset, textSegment.length);
+        // segments
+        ByteUtils.writeInt(outStream, segments.length);
+        for (Segment segment : segments)
+            segment.encode(outStream);
     }
 
-    public static ExecutableBinary decode(byte[] bytes)
+    public static ExecutableBinary decode(InputStream inStream) throws IOException
     {
-        int wordCounter = 0;
+        // magic number
+        int magicNumber = ByteUtils.readInt(inStream);
+        if (magicNumber != MAGIC_NUMBER)
+            throw new RuntimeException();
 
-        int dataBytesOffset = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        int dataAddress = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        int dataLength = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        Segment dataSegment = new Segment(bytes, dataBytesOffset, dataAddress, dataLength);
+        // entry point
+        int entryPoint = ByteUtils.readInt(inStream);
 
-        int textBytesOffset = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        int textAddress = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        int textLength = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        Segment textSegment = new Segment(bytes, textBytesOffset, textAddress, textLength);
+        // segments
+        int segmentsCount = ByteUtils.readInt(inStream);
+        Segment[] segments = new Segment[segmentsCount];
+        for (int i = 0; i < segmentsCount; i++)
+            segments[i] = Segment.decode(inStream);
 
-        int executableEntryPoint = ByteUtils.readInt(bytes, 4 * wordCounter++);
-        return new ExecutableBinary(dataSegment, textSegment, executableEntryPoint);
-    }
-
-    public Segment[] segments()
-    {
-        return new Segment[] { dataSegment, textSegment };
+        return new ExecutableBinary(segments, entryPoint);
     }
 }

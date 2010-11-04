@@ -24,9 +24,9 @@ public class SimulatorCore
         memory = new Memory(options.pageSizeExponent);
     }
 
-    public void storeSegment(Segment segment)
+    public void storeBytes(byte[] bytes, int offset, int length, int address)
     {
-        memory.storeSegment(segment);
+        memory.storeBytes(bytes, offset, length, address);
     }
 
     public void setPc(int address)

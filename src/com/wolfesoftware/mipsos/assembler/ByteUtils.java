@@ -24,14 +24,6 @@ public final class ByteUtils
         }
         return bytes;
     }
-    public static void writeInt(OutputStream outStream, int value) throws IOException
-    {
-        outStream.write((byte)((value & 0xFF000000) >> 24));
-        outStream.write((byte)((value & 0x00FF0000) >> 16));
-        outStream.write((byte)((value & 0x0000FF00) >> 8));
-        outStream.write((byte)((value & 0x000000FF) >> 0));
-    }
-
     // converts an array of numbers to an array of ints stored as an array of bytes
     public static byte[] convertToInts(long[] ints)
     {
@@ -46,8 +38,17 @@ public final class ByteUtils
         return bytes;
     }
 
-    // converts an array of numbers to an array of longs stored as an array of
-    // bytes
+    public static byte[] convertInt(int value)
+    {
+        return new byte[] {
+                (byte)((value & 0xFF000000) >> 24),
+                (byte)((value & 0x00FF0000) >> 16),
+                (byte)((value & 0x0000FF00) >> 8),
+                (byte)((value & 0x000000FF) >> 0),
+        };
+    }
+
+    // converts an array of numbers to an array of longs stored as an array of bytes
     public static byte[] convertLong(long[] longs)
     {
         byte[] bytes = new byte[longs.length * 8];
@@ -123,6 +124,13 @@ public final class ByteUtils
         return bytes;
     }
 
+    public static int readInt(InputStream inStream) throws IOException
+    {
+        byte[] bytes = new byte[4];
+        if (inStream.read(bytes) != 4)
+            throw new RuntimeException();
+        return readInt(bytes, 0);
+    }
     public static int readInt(byte[] bytes, int offset)
     {
         return ((bytes[offset + 0] & 0xFF) << 24) | //
@@ -130,4 +138,41 @@ public final class ByteUtils
                 ((bytes[offset + 2] & 0xFF) << 8) | //
                 ((bytes[offset + 3] & 0xFF) << 0);
     }
+    public static void writeInt(OutputStream outStream, int value) throws IOException
+    {
+        outStream.write((byte)((value & 0xFF000000) >> 24));
+        outStream.write((byte)((value & 0x00FF0000) >> 16));
+        outStream.write((byte)((value & 0x0000FF00) >> 8));
+        outStream.write((byte)((value & 0x000000FF) >> 0));
+    }
+
+    public static void writeString(OutputStream outStream, String value) throws IOException
+    {
+        byte[] bytes = value.getBytes();
+        writeInt(outStream, bytes.length);
+        outStream.write(bytes);
+    }
+    public static String readString(InputStream inStream) throws IOException
+    {
+        return new String(readByteArray(inStream));
+    }
+
+    public static byte[] readByteArray(InputStream inStream) throws IOException
+    {
+        int length = readInt(inStream);
+        byte[] bytes = new byte[length];
+        if (inStream.read(bytes) < length)
+            throw new RuntimeException();
+        return bytes;
+    }
+    public static void writeByteArray(OutputStream outStream, byte[] bytes) throws IOException
+    {
+        writeByteArray(outStream, bytes, 0, bytes.length);
+    }
+    public static void writeByteArray(OutputStream outStream, byte[] bytes, int offset, int length) throws IOException
+    {
+        writeInt(outStream, length);
+        outStream.write(bytes, offset, length);
+    }
+
 }

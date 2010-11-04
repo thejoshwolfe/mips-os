@@ -18,7 +18,8 @@ public class Simulator
 
         // assemble source
         byte[] binaryBytes = Assembler.assemble(new File(source), false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
-        ExecutableBinary binary = ExecutableBinary.decode(binaryBytes);
+        InputStream binaryInputStream = new ByteArrayInputStream(binaryBytes);
+        ExecutableBinary binary = ExecutableBinary.decode(binaryInputStream);
 
         // init the simulator
         SimulatorCore simulatorCore = new SimulatorCore(options, new ISimulatorListener() {
@@ -38,8 +39,13 @@ public class Simulator
                 }
             }
         });
-        for (Segment segment : binary.segments())
-            simulatorCore.storeSegment(segment);
+        for (Segment segment : binary.segments) {
+            byte[] addressBytes = segment.attributes.get(Segment.ATTRIBUTE_ADDRESS);
+            if (addressBytes == null)
+                continue;
+            int address = ByteUtils.readInt(addressBytes, 0);
+            simulatorCore.storeBytes(segment.bytes, segment.offset, segment.length, address);
+        }
         simulatorCore.setPc(binary.executableEntryPoint);
 
 

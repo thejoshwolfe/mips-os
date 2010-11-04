@@ -199,20 +199,31 @@ public class Assembler
             // .text section
             verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSource);
         } else {
+            ArrayList<Segment> segments = new ArrayList<Segment>();
             // .data section
             ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
             nonverboseOutput(dataAddress, binarization.dataElems, dataSection, binarization.labels);
-            Segment dataSegment = new Segment(dataSection.toByteArray(), binarization.header.dataAddr);
+            segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.dataAddr), dataSection.toByteArray()));
 
             // .text section
             ByteArrayOutputStream textSection = new ByteArrayOutputStream();
             nonverboseOutput(textAddress, binarization.textElems, textSection, binarization.labels);
-            Segment textSegment = new Segment(textSection.toByteArray(), binarization.header.textAddr);
+            segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.textAddr), textSection.toByteArray()));
 
             int executableEntryPoint = binarization.labels.get("main").intValue();
-            ExecutableBinary binary = new ExecutableBinary(dataSegment, textSegment, executableEntryPoint);
+            Segment[] segmentsArray = segments.toArray(new Segment[segments.size()]);
+            ExecutableBinary binary = new ExecutableBinary(segmentsArray, executableEntryPoint);
             binary.encode(outStream);
         }
+    }
+
+    private static HashMap<String, byte[]> makeAddressOnlyAttributes(int address)
+    {
+        HashMap<String, byte[]> attributes = new HashMap<String, byte[]>();
+        String key = Segment.ATTRIBUTE_ADDRESS;
+        byte[] value = ByteUtils.convertInt(address);
+        attributes.put(key, value);
+        return attributes;
     }
 
     private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress, HashMap<String, Long> labels, boolean useAddress,
