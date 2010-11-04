@@ -1,6 +1,5 @@
 package com.wolfesoftware.mipsos.simulator;
 
-import java.util.ArrayList;
 
 
 public class SimulatorCore
@@ -289,22 +288,5 @@ public class SimulatorCore
         if (options.fancyIoSupport)
             return;
         throw new RuntimeException("fancy IO is not enabled");
-    }
-
-    public static class SimulatorOptions
-    {
-        public int pageSizeExponent = 6;
-        public boolean fancyIoSupport = false;
-        public String[] parse(String[] args)
-        {
-            ArrayList<String> extra = new ArrayList<String>();
-            for (String arg : args) {
-                if (arg.equals("--fancy"))
-                    fancyIoSupport = true;
-                else
-                    extra.add(arg);
-            }
-            return extra.toArray(new String[extra.size()]);
-        }
     }
 }

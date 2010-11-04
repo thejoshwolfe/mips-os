@@ -3,16 +3,13 @@ package com.wolfesoftware.mipsos.assembler;
 import java.io.*;
 import java.util.*;
 
-import com.wolfesoftware.mipsos.simulator.*;
+import com.wolfesoftware.mipsos.common.*;
 
 //http://www.d.umn.edu/~gshute/spimsal/talref.html
 //http://6004.csail.mit.edu/6.371/handouts/mips6371.pdf
 
 public class Assembler
 {
-    public static final int DefaultDataAddress = 0x10000000;
-    public static final int DefaultTextAddress = 0x00400000;
-
     private static final String blankBinAddr = "          ";
     private static final String blankBinWord = "                  ";
 
@@ -23,91 +20,15 @@ public class Assembler
     public static void main(String[] args)
     {
         // get options from args
-        OutputStream outStream = System.out;
-        boolean readable = false;
-        Map<String, Integer> baseAddresses = makeDefaultOptions().getSegmentBaseAddresses();
-        int dataAddress = baseAddresses.get(".data");
-        int textAddress = baseAddresses.get(".text");
-
-        // read filename for input
-        if (!(args.length >= 1)) {
-            printUsage();
-            return;
-        }
-        FileInputStream inStream;
-        try {
-            inStream = new FileInputStream(args[0]);
-        } catch (FileNotFoundException e) {
-            System.out.println("File not found: " + args[0]);
-            return;
-        }
-
-        // go through remaining args looking for options
-        int i = 1; // skip the input file name
-        while (i < args.length) {
-            String arg = args[i];
-            if (arg.equals("-d")) {
-                // data address
-                if (i + 1 >= args.length) {
-                    printUsage();
-                    return;
-                }
-                try {
-                    dataAddress = parseAddress(args[i + 1]);
-                } catch (NumberFormatException e) {
-                    System.out.println(e.toString());
-                    printUsage();
-                    return;
-                }
-                i += 2;
-            } else if (arg.equals("-t")) {
-                // text address
-                if (i + 1 >= args.length) {
-                    printUsage();
-                    return;
-                }
-                try {
-                    textAddress = parseAddress(args[i + 1]);
-                } catch (NumberFormatException e) {
-                    System.out.println(e.toString());
-                    printUsage();
-                    return;
-                }
-                i += 2;
-            } else if (arg.equals("-r")) {
-                // readable
-                readable = true;
-                i += 1;
-            } else if (arg.equals("-o")) {
-                // output file
-                if (i + 1 >= args.length) {
-                    printUsage();
-                    return;
-                }
-                // FileOutputStream outStream;
-                try {
-                    outStream = new FileOutputStream(args[i + 1]);
-                } catch (FileNotFoundException e) {
-                    System.out.println("Illegal output file name: " + args[i + 1]);
-                    return;
-                }
-                // options.outStream = outStream;
-                i += 2;
-            } else {
-                // invalid argument
-                printUsage();
-                return;
-            }
-        }
-
-        // if no output file, force -r readable option (disallow writing
-        // byte-data to System.out)
-        if (outStream == System.out)
-            readable = true;
+        AssemblerOptions options = new AssemblerOptions();
+        LinkedList<String> argList = options.parse(args);
+        if (argList.size() != 1)
+            throw new RuntimeException();
+        String inputPath = argList.getFirst();
 
         // call the assemble function
         try {
-            assemble(inStream, outStream, readable, dataAddress, textAddress);
+            assemble(inputPath, options);
         } catch (AssemblingException e) {
             System.out.print(e.toString());
         } catch (IOException e) {
@@ -115,15 +36,16 @@ public class Assembler
         }
     }
 
-    public static byte[] assemble(File inFile, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
+    public static byte[] assembleToBytes(String inputPath, AssemblerOptions options) throws AssemblingException, IOException
     {
-        InputStream inStream = new FileInputStream(inFile);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        assemble(inStream, outStream, readable, dataAddress, textAddress);
+        options.outStream = outStream;
+        assemble(inputPath, options);
         return outStream.toByteArray();
     }
-    public static void assemble(InputStream inStream, OutputStream outStream, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
+    public static void assemble(String inputPath, AssemblerOptions options) throws AssemblingException, IOException
     {
+        InputStream inStream = new FileInputStream(inputPath);
         // read input stream
         Scanner inScanner = new Scanner(inStream);
         StringBuilder fullSourceBuilder = new StringBuilder();
@@ -153,7 +75,7 @@ public class Assembler
         // parse
         Parser.Binarization binarization;
         try {
-            binarization = Parser.parse(tokens, dataAddress, textAddress);
+            binarization = Parser.parse(tokens, options.dataAddress, options.textAddress);
         } catch (ParsingException e) {
             Token.TokenBase token = tokens[e.tokenIndex];
             int startLine = findInList(lineIndecies, token.srcStart);
@@ -179,9 +101,9 @@ public class Assembler
             throw new UndefinedLabelsException(missingLabels); // report missing labels
 
         // output
-        if (readable) {
+        if (options.readable) {
             // header
-            PrintStream printStream = new PrintStream(outStream);
+            PrintStream printStream = new PrintStream(options.outStream);
             printStream.println("; header");
             byte[] bytes = binarization.header.getBinary(binarization.labels, -1);
             int wordCounter = 0;
@@ -194,26 +116,26 @@ public class Assembler
             printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; executable entry point");
 
             // .data section
-            verboseOutput(binarization.dataElems, printStream, ".data", dataAddress, binarization.labels, true, tokens, fullSource);
+            verboseOutput(binarization.dataElems, printStream, ".data", options.dataAddress, binarization.labels, true, tokens, fullSource);
 
             // .text section
-            verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSource);
+            verboseOutput(binarization.textElems, printStream, ".text", options.textAddress, binarization.labels, true, tokens, fullSource);
         } else {
             ArrayList<Segment> segments = new ArrayList<Segment>();
             // .data section
             ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
-            nonverboseOutput(dataAddress, binarization.dataElems, dataSection, binarization.labels);
+            nonverboseOutput(options.dataAddress, binarization.dataElems, dataSection, binarization.labels);
             segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.dataAddr), dataSection.toByteArray()));
 
             // .text section
             ByteArrayOutputStream textSection = new ByteArrayOutputStream();
-            nonverboseOutput(textAddress, binarization.textElems, textSection, binarization.labels);
+            nonverboseOutput(options.textAddress, binarization.textElems, textSection, binarization.labels);
             segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.textAddr), textSection.toByteArray()));
 
             int executableEntryPoint = binarization.labels.get("main").intValue();
             Segment[] segmentsArray = segments.toArray(new Segment[segments.size()]);
             ExecutableBinary binary = new ExecutableBinary(segmentsArray, executableEntryPoint);
-            binary.encode(outStream);
+            binary.encode(options.outStream);
         }
     }
 
@@ -302,60 +224,5 @@ public class Assembler
             rtnStr += Integer.toHexString((bytes[j] & 0x0F) >> 0).toUpperCase();
         }
         return rtnStr;
-    }
-
-    // prints the intended command line usage of the main function
-    private static void printUsage()
-    {
-        System.out.print("\n" + //
-                "Usage:\n" + //
-                "    java Assembler (inputfile) [-o (outputfile)] [-t (textbaseaddress)] [-d (databaseaddress)] [-r]\n" + //
-                "\n" + //
-                "Example:\n" + //
-                "    java Assembler MyMipsProgram.asm -o a.out.txt -t 0x00400000 -v\n" + //
-                "\n" + //
-                "Args:\n" + //
-                "    [inputfile]: name of input file\n" + //
-                "    [outputfile]: name of output file\n" + //
-                "    [textbaseaddress]: base address of the instructions (int>=0. dec or hex)\n" + //
-                "    [databaseaddress]: base address of the data (int>=0. dec or hex)\n" + //
-                "\n" + //
-                "Options:\n" + //
-                "    [-r]: readable. human-readable output\n" + //
-                "\n");
-    }
-
-    // parses an integer in either hex or decimal and and validates the value
-    // into the 32-bit unsigned range
-    private static int parseAddress(String text)
-    {
-        long temp;
-        if (text.length() >= 2 && text.substring(0, 2).equals("0x")) {
-            // hex base address
-            temp = Long.parseLong(text.substring(2), 16);
-        } else {
-            // dec base address
-            temp = Long.parseLong(text, 10);
-        }
-        if (temp > 0x7FFFFFFF) // java has no unsigned types
-            temp -= 0x100000000L;
-        if (!(0 <= temp && temp <= 0x7FFFFFFFL))
-            throw new NumberFormatException();
-        else
-            return (int)(temp & -4); // truncate to word
-    }
-
-    public static IAssemblerOptions makeDefaultOptions()
-    {
-        return new IAssemblerOptions() {
-            @Override
-            public Map<String, Integer> getSegmentBaseAddresses()
-            {
-                Map<String, Integer> baseAddresses = new HashMap<String, Integer>(2);
-                baseAddresses.put(".data", DefaultDataAddress);
-                baseAddresses.put(".text", DefaultTextAddress);
-                return baseAddresses;
-            }
-        };
     }
 }

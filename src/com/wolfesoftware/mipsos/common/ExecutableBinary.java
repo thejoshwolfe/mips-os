@@ -1,4 +1,4 @@
-package com.wolfesoftware.mipsos.simulator;
+package com.wolfesoftware.mipsos.common;
 
 import java.io.*;
 

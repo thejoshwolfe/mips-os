@@ -1,28 +1,39 @@
 package com.wolfesoftware.mipsos.simulator;
 
 import java.io.*;
+import java.util.LinkedList;
 
 import com.wolfesoftware.mipsos.assembler.*;
-import com.wolfesoftware.mipsos.simulator.SimulatorCore.SimulatorOptions;
+import com.wolfesoftware.mipsos.common.*;
 
 public class Simulator
 {
     public static void main(String[] args) throws AssemblingException, IOException
     {
         // parse the args
-        SimulatorOptions options = new SimulatorOptions();
-        args = options.parse(args);
-        if (args.length != 1)
+        AssemblerOptions assemblerOptions = new AssemblerOptions();
+        LinkedList<String> argList = assemblerOptions.parse(args);
+        if (assemblerOptions.outStream == System.out)
             throw new RuntimeException();
-        String source = args[0];
+        if (Boolean.TRUE.equals(assemblerOptions.readable))
+            throw new RuntimeException();
+        assemblerOptions.readable = false;
+
+        SimulatorOptions simulatorOptions = new SimulatorOptions();
+        simulatorOptions.parse(argList);
+        simulatorOptions.normalize();
+
+        if (argList.size() != 1)
+            throw new RuntimeException();
+        String inputPath = argList.getFirst();
 
         // assemble source
-        byte[] binaryBytes = Assembler.assemble(new File(source), false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
+        byte[] binaryBytes = Assembler.assembleToBytes(inputPath, assemblerOptions);
         InputStream binaryInputStream = new ByteArrayInputStream(binaryBytes);
         ExecutableBinary binary = ExecutableBinary.decode(binaryInputStream);
 
         // init the simulator
-        SimulatorCore simulatorCore = new SimulatorCore(options, new ISimulatorListener() {
+        SimulatorCore simulatorCore = new SimulatorCore(simulatorOptions, new ISimulatorListener() {
             @Override
             public void printCharacter(char c)
             {
