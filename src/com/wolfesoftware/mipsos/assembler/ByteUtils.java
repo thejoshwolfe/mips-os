@@ -1,5 +1,6 @@
 package com.wolfesoftware.mipsos.assembler;
 
+import java.io.*;
 
 public final class ByteUtils
 {
@@ -22,6 +23,13 @@ public final class ByteUtils
             bytes[i * 2 + 1] = (byte)((shorts[i] & 0x00FF) >> 0);
         }
         return bytes;
+    }
+    public static void writeInt(OutputStream outStream, int value) throws IOException
+    {
+        outStream.write((byte)((value & 0xFF000000) >> 24));
+        outStream.write((byte)((value & 0x00FF0000) >> 16));
+        outStream.write((byte)((value & 0x0000FF00) >> 8));
+        outStream.write((byte)((value & 0x000000FF) >> 0));
     }
 
     // converts an array of numbers to an array of ints stored as an array of bytes

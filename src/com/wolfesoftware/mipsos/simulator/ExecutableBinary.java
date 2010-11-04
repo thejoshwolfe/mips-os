@@ -1,5 +1,7 @@
 package com.wolfesoftware.mipsos.simulator;
 
+import java.io.*;
+
 import com.wolfesoftware.mipsos.assembler.ByteUtils;
 
 /**
@@ -7,14 +9,31 @@ import com.wolfesoftware.mipsos.assembler.ByteUtils;
  */
 public class ExecutableBinary
 {
+    private static final int MAGIC_NUMBER = 0x981dc595;
     public final Segment dataSegment;
     public final Segment textSegment;
     public final int executableEntryPoint;
-    private ExecutableBinary(Segment dataSegment, Segment textSegment, int executableEntryPoint)
+    public ExecutableBinary(Segment dataSegment, Segment textSegment, int executableEntryPoint)
     {
         this.dataSegment = dataSegment;
         this.textSegment = textSegment;
         this.executableEntryPoint = executableEntryPoint;
+    }
+
+    public void encode(OutputStream outStream) throws IOException
+    {
+        // header
+        ByteUtils.writeInt(outStream, 7 * 4);
+        ByteUtils.writeInt(outStream, dataSegment.address);
+        ByteUtils.writeInt(outStream, dataSegment.length);
+        ByteUtils.writeInt(outStream, 7 * 4 + dataSegment.length);
+        ByteUtils.writeInt(outStream, textSegment.address);
+        ByteUtils.writeInt(outStream, textSegment.length);
+        ByteUtils.writeInt(outStream, executableEntryPoint);
+
+        outStream.write(dataSegment.bytes, dataSegment.offset, dataSegment.length);
+
+        outStream.write(textSegment.bytes, textSegment.offset, textSegment.length);
     }
 
     public static ExecutableBinary decode(byte[] bytes)

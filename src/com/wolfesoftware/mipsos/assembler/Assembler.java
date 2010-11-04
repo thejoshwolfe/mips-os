@@ -3,6 +3,8 @@ package com.wolfesoftware.mipsos.assembler;
 import java.io.*;
 import java.util.*;
 
+import com.wolfesoftware.mipsos.simulator.*;
+
 //http://www.d.umn.edu/~gshute/spimsal/talref.html
 //http://6004.csail.mit.edu/6.371/handouts/mips6371.pdf
 
@@ -113,10 +115,13 @@ public class Assembler
         }
     }
 
-    /**
-     * the main point of this class. Assembles the MIPS source from inStream,
-     * and prints the result to outStream.
-     */
+    public static byte[] assemble(File inFile, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
+    {
+        InputStream inStream = new FileInputStream(inFile);
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        assemble(inStream, outStream, readable, dataAddress, textAddress);
+        return outStream.toByteArray();
+    }
     public static void assemble(InputStream inStream, OutputStream outStream, boolean readable, int dataAddress, int textAddress) throws AssemblingException, IOException
     {
         // read input stream
@@ -175,20 +180,18 @@ public class Assembler
 
         // output
         if (readable) {
-            // .head section
+            // header
             PrintStream printStream = new PrintStream(outStream);
-            printStream.println(".head");
-            {
-                byte[] bytes = binarization.header.getBinary(binarization.labels, -1);
-                int wordCounter = 0;
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Address");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Length");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Offset");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Address");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Length");
-                printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; executable entry point");
-            }
+            printStream.println("; header");
+            byte[] bytes = binarization.header.getBinary(binarization.labels, -1);
+            int wordCounter = 0;
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Offset");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Address");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .data Length");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Offset");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Address");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; .text Length");
+            printStream.println(blankBinAddr + bytesWordToString(bytes, 4 * wordCounter++) + " ; executable entry point");
 
             // .data section
             verboseOutput(binarization.dataElems, printStream, ".data", dataAddress, binarization.labels, true, tokens, fullSource);
@@ -196,14 +199,19 @@ public class Assembler
             // .text section
             verboseOutput(binarization.textElems, printStream, ".text", textAddress, binarization.labels, true, tokens, fullSource);
         } else {
-            // .head section
-            outStream.write(binarization.header.getBinary(binarization.labels, 0));
-
             // .data section
-            nonverboseOutput(dataAddress, binarization.dataElems, outStream, binarization.labels);
+            ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
+            nonverboseOutput(dataAddress, binarization.dataElems, dataSection, binarization.labels);
+            Segment dataSegment = new Segment(dataSection.toByteArray(), binarization.header.dataAddr);
 
             // .text section
-            nonverboseOutput(textAddress, binarization.textElems, outStream, binarization.labels);
+            ByteArrayOutputStream textSection = new ByteArrayOutputStream();
+            nonverboseOutput(textAddress, binarization.textElems, textSection, binarization.labels);
+            Segment textSegment = new Segment(textSection.toByteArray(), binarization.header.textAddr);
+
+            int executableEntryPoint = binarization.labels.get("main").intValue();
+            ExecutableBinary binary = new ExecutableBinary(dataSegment, textSegment, executableEntryPoint);
+            binary.encode(outStream);
         }
     }
 

@@ -10,26 +10,15 @@ public class Simulator
     public static void main(String[] args) throws AssemblingException, IOException
     {
         // parse the args
-        String source = null;
         SimulatorOptions options = new SimulatorOptions();
-
-        for (String arg : args) {
-            if (arg.equals("--fancy"))
-                options.fancyIoSupport = true;
-            else {
-                if (source != null)
-                    throw new RuntimeException();
-                source = arg;
-            }
-        }
-        if (source == null)
+        args = options.parse(args);
+        if (args.length != 1)
             throw new RuntimeException();
+        String source = args[0];
 
         // assemble source
-        InputStream inStream = new FileInputStream(source);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        Assembler.assemble(inStream, outStream, false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
-        ExecutableBinary binary = ExecutableBinary.decode(outStream.toByteArray());
+        byte[] binaryBytes = Assembler.assemble(new File(source), false, Assembler.DefaultDataAddress, Assembler.DefaultTextAddress);
+        ExecutableBinary binary = ExecutableBinary.decode(binaryBytes);
 
         // init the simulator
         SimulatorCore simulatorCore = new SimulatorCore(options, new ISimulatorListener() {

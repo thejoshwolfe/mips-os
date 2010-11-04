@@ -111,14 +111,9 @@ public class Parser
             throw new ParsingException(i, PRMT_IllegalStartOfStatement);
         }
 
-        Bin.BinBase[] dataArray = new Bin.BinBase[dataElems.size()];
-        for (int j = 0; j < dataArray.length; j++)
-            dataArray[j] = dataElems.get(j);
-        Bin.BinBase[] textArray = new Bin.BinBase[textElems.size()];
-        for (int j = 0; j < textArray.length; j++)
-            textArray[j] = textElems.get(j);
-
         // construct Binarization and return
+        Bin.BinBase[] dataArray = dataElems.toArray(new Bin.BinBase[dataElems.size()]);
+        Bin.BinBase[] textArray = textElems.toArray(new Bin.BinBase[textElems.size()]);
         return new Binarization(dataArray, textArray, labels, dataStartAddress, textStartAddress);
     }
 
@@ -766,12 +761,8 @@ public class Parser
 		public HashMap<String, Long> labels;
 
 		// take only required information and deduce the rest
-		public Binarization(Bin.BinBase[] dataElems, 
-		                    Bin.BinBase[] textElems, 
-		                    HashMap<String, Long> labels, 
-		                    int dataAddress,
-		                    int textAddress)
-		{
+        public Binarization(Bin.BinBase[] dataElems, Bin.BinBase[] textElems, HashMap<String, Long> labels, int dataAddress, int textAddress)
+        {
 			this.dataElems = dataElems;
 			this.dataAddr = dataAddress;
 			int dataLen = 0;

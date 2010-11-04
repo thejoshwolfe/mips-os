@@ -6,6 +6,10 @@ public class Segment
     public final int offset;
     public final int address;
     public final int length;
+    public Segment(byte[] bytes, int address)
+    {
+        this(bytes, 0, address, bytes.length);
+    }
     public Segment(byte[] bytes, int offset, int address, int length)
     {
         this.bytes = bytes;
