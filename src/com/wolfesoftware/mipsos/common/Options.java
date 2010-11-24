@@ -1,20 +1,9 @@
 package com.wolfesoftware.mipsos.common;
 
 import java.io.*;
-import java.util.LinkedList;
 
 public abstract class Options
 {
-    public LinkedList<String> parse(String[] args)
-    {
-        LinkedList<String> argList = new LinkedList<String>();
-        for (String arg : args)
-            argList.add(arg);
-        parse(argList);
-        return argList;
-    }
-    public abstract void parse(LinkedList<String> args);
-
     public void normalize()
     {
     }

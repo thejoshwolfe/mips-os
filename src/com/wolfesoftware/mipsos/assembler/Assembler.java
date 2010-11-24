@@ -20,8 +20,9 @@ public class Assembler
     public static void main(String[] args)
     {
         // get options from args
+        LinkedList<String> argList = Util.arrayToLinkedList(args);
         AssemblerOptions options = new AssemblerOptions();
-        LinkedList<String> argList = options.parse(args);
+        options.parse(argList);
         if (argList.size() != 1)
             throw new RuntimeException();
         String inputPath = argList.getFirst();
@@ -224,5 +225,12 @@ public class Assembler
             rtnStr += Integer.toHexString((bytes[j] & 0x0F) >> 0).toUpperCase();
         }
         return rtnStr;
+    }
+
+    public static ExecutableBinary assembleToBinary(String inputPath, AssemblerOptions assemblerOptions) throws AssemblingException, IOException
+    {
+        byte[] binaryBytes = Assembler.assembleToBytes(inputPath, assemblerOptions);
+        InputStream binaryInputStream = new ByteArrayInputStream(binaryBytes);
+        return ExecutableBinary.decode(binaryInputStream);
     }
 }

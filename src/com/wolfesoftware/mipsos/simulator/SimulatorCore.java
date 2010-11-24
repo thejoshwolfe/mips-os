@@ -1,5 +1,7 @@
 package com.wolfesoftware.mipsos.simulator;
 
+import com.wolfesoftware.mipsos.assembler.ByteUtils;
+import com.wolfesoftware.mipsos.common.*;
 
 
 public class SimulatorCore
@@ -13,7 +15,7 @@ public class SimulatorCore
     private Memory memory;
 
     private SimulatorStatus status = SimulatorStatus.Ready;
-    private ISimulatorListener listener = null;
+    public ISimulatorListener listener = null;
     private SimulatorOptions options;
 
     public SimulatorCore(SimulatorOptions options, ISimulatorListener listener)
@@ -23,25 +25,31 @@ public class SimulatorCore
         memory = new Memory(options.pageSizeExponent);
     }
 
-    public void storeBytes(byte[] bytes, int offset, int length, int address)
+    public void loadBinary(ExecutableBinary binary)
     {
-        memory.storeBytes(bytes, offset, length, address);
+        for (Segment segment : binary.segments) {
+            byte[] addressBytes = segment.attributes.get(Segment.ATTRIBUTE_ADDRESS);
+            if (addressBytes == null)
+                continue;
+            int address = ByteUtils.readInt(addressBytes, 0);
+            memory.storeBytes(segment.bytes, segment.offset, segment.length, address);
+        }
+        pc = binary.executableEntryPoint;
     }
-
-    public void setPc(int address)
+    public int getPc()
     {
-        pc = address;
-    }
-
-    public SimulatorStatus getStatus()
-    {
-        return status;
+        return pc;
     }
 
     public void run()
     {
         while (status != SimulatorStatus.Done)
             internalStep();
+    }
+    public SimulatorStatus step()
+    {
+        internalStep();
+        return status;
     }
 
     private void internalStep()

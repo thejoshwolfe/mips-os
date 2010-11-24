@@ -2,17 +2,31 @@ package com.wolfesoftware.mipsos.simulator;
 
 import java.util.*;
 
+import com.wolfesoftware.mipsos.assembler.AssemblerOptions;
 import com.wolfesoftware.mipsos.common.Options;
 
 public class SimulatorOptions extends Options
 {
+    public AssemblerOptions assemblerOptions;
     public int pageSizeExponent = 6;
     public boolean fancyIoSupport = false;
-    public Boolean debugInfo = null;
 
-    @Override
-    public void parse(LinkedList<String> args)
+    public void parse(LinkedList<String> args, boolean forceDebug)
     {
+        assemblerOptions = new AssemblerOptions();
+        assemblerOptions.parse(args);
+        if (assemblerOptions.outStream == System.out)
+            throw new RuntimeException();
+        if (Boolean.TRUE.equals(assemblerOptions.readable))
+            throw new RuntimeException();
+        assemblerOptions.readable = false;
+        if (forceDebug) {
+            if (Boolean.FALSE.equals(assemblerOptions.debugInfo))
+                throw new RuntimeException();
+            assemblerOptions.debugInfo = true;
+        }
+        assemblerOptions.normalize();
+
         Iterator<String> iterator = args.iterator();
         while (iterator.hasNext()) {
             String arg = iterator.next();
@@ -22,19 +36,7 @@ public class SimulatorOptions extends Options
             } else if (arg.equals("--fancy")) {
                 fancyIoSupport = true;
                 iterator.remove();
-            } else if (arg.equals("--debug")) {
-                debugInfo = true;
-                iterator.remove();
-            } else if (arg.equals("--no-debug")) {
-                debugInfo = false;
-                iterator.remove();
             }
         }
-    }
-    @Override
-    public void normalize()
-    {
-        if (debugInfo == null)
-            debugInfo = false;
     }
 }

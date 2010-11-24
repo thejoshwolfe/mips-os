@@ -14,8 +14,8 @@ public class AssemblerOptions extends Options
     public int textAddress = DefaultTextAddress;
     public Boolean readable = null;
     public OutputStream outStream = null;
+    public Boolean debugInfo = null;
 
-    @Override
     public void parse(LinkedList<String> args)
     {
         Iterator<String> iterator = args.iterator();
@@ -36,6 +36,12 @@ public class AssemblerOptions extends Options
             } else if (arg.startsWith("--output=")) {
                 outStream = openOutputStream(arg.substring("--output=".length()));
                 iterator.remove();
+            } else if (arg.equals("--debug")) {
+                debugInfo = true;
+                iterator.remove();
+            } else if (arg.equals("--no-debug")) {
+                debugInfo = false;
+                iterator.remove();
             }
         }
     }
@@ -44,7 +50,11 @@ public class AssemblerOptions extends Options
     {
         if (outStream == null)
             outStream = System.out;
-        if (readable == null)
+        if (readable == null) {
+            // probably don't want to print binary to stdout in the default case
             readable = outStream == System.out;
+        }
+        if (debugInfo == null)
+            debugInfo = false;
     }
 }
