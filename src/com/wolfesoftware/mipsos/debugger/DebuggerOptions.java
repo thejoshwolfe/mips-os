@@ -24,7 +24,7 @@ public class DebuggerOptions extends Options
             if (arg.equals("--run")) {
                 run = true;
                 iterator.remove();
-            } else if (arg.equals("--no-debug")) {
+            } else if (arg.equals("--no-run")) {
                 run = false;
                 iterator.remove();
             } else if (arg.startsWith("--break=")) {

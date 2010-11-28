@@ -75,60 +75,8 @@ public class Debugger
 
     private void cliMain()
     {
-        CliSettings settings = CliSettings.load();
-        Scanner scanner = new Scanner(System.in);
-
-        while (true) {
-            needUserActionEvent.waitForIt();
-
-            if (settings.autoList) {
-                wideList(settings.listRadius);
-            } else {
-                singleList();
-            }
-
-            if (!scanner.hasNextLine())
-                break;
-            String line = scanner.nextLine();
-
-            String[] parts = line.split(" ", 1);
-            String commandString = parts[0];
-            DebuggerCommand command = DebuggerCommand.fromName(commandString);
-            if (command == null) {
-                System.err.println("Bad Command: " + commandString);
-                continue;
-            }
-
-            switch (command) {
-                case GO:
-                    go();
-                    break;
-                case LIST:
-                    wideList(settings.listRadius);
-                    break;
-                case STEP:
-                    step();
-                    break;
-                default:
-                    throw null;
-            }
-        }
-
-        Util.put(simulatorActions, null);
+        new Cli().main();
     }
-
-    private void singleList()
-    {
-        System.out.println("TODO: single list");
-        // TODO
-    }
-
-    private void wideList(int listRadius)
-    {
-        System.out.println("TODO: wide list");
-        // TODO
-    }
-
     private void simulatorThreadMain()
     {
         while (true) {
@@ -139,7 +87,13 @@ public class Debugger
         }
     }
 
-    private void step()
+    public String[] wideList(int listRadius)
+    {
+        return new String[] { "TODO: wide list" };
+        // TODO
+    }
+
+    public void step()
     {
         needUserActionEvent.clear();
 
@@ -188,5 +142,54 @@ public class Debugger
     private void internalPrintCharacter(char c)
     {
         // TODO Auto-generated method stub
+    }
+    private class Cli
+    {
+        private CliSettings settings = new CliSettings();
+        public void main()
+        {
+            Scanner scanner = new Scanner(System.in);
+
+            while (true) {
+                needUserActionEvent.waitForIt();
+
+                System.out.print(">>> ");
+
+                if (!scanner.hasNextLine())
+                    break;
+                String line = scanner.nextLine();
+
+                for (String statement : line.split(";")) {
+                    String[] parts = statement.trim().split(" ", 1);
+                    String commandString = parts[0];
+                    DebuggerCommand command = DebuggerCommand.fromName(commandString);
+                    if (command == null) {
+                        System.err.println("Bad Command: " + commandString);
+                        continue;
+                    }
+
+                    switch (command) {
+                        case GO:
+                            go();
+                            break;
+                        case LIST:
+                            wideListToStdout(settings.listRadius);
+                            break;
+                        case STEP:
+                            step();
+                            break;
+                        default:
+                            throw null;
+                    }
+                }
+            }
+
+            Util.put(simulatorActions, null);
+        }
+        private void wideListToStdout(int listRadius)
+        {
+            for (String line : wideList(listRadius))
+                System.out.println(line);
+        }
     }
 }
