@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 public enum DebuggerCommand {
     GO("g", "go", "continue", "resume"), //
+    INPUT("i", "in", "stdin", "input"), //
     LIST("l", "ls", "list"),
     STEP("s", "step"), //
     ;

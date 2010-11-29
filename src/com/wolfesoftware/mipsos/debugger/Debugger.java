@@ -46,6 +46,7 @@ public class Debugger
     private final BlockingEvent needUserActionEvent = new BlockingEvent(true);
     private final Thread simulatorThread;
     private final LinkedBlockingQueue<Runnable> simulatorActions = new LinkedBlockingQueue<Runnable>();
+    private final LinkedBlockingQueue<Character> stdinQueue = new LinkedBlockingQueue<Character>();
     private final HashSet<Integer> breakpoints = new HashSet<Integer>();
 
     public Debugger(SimulatorCore simulatorCore)
@@ -129,19 +130,29 @@ public class Debugger
         });
     }
 
+    public void input(String string)
+    {
+        for (char c : string.toCharArray()) {
+            Util.put(stdinQueue, c);
+            needUserActionEvent.clear();
+        }
+    }
+
     public void setBreakpoint(int lineNumber)
     {
+        // TODO: translate line number to address
         breakpoints.add(lineNumber);
     }
 
     private char internalReadCharacter()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        if (stdinQueue.isEmpty())
+            needUserActionEvent.set();
+        return Util.take(stdinQueue);
     }
     private void internalPrintCharacter(char c)
     {
-        // TODO Auto-generated method stub
+        System.out.print(c);
     }
     private class Cli
     {
@@ -153,6 +164,16 @@ public class Debugger
             while (true) {
                 needUserActionEvent.waitForIt();
 
+                switch (simulatorCore.getStatus())
+                {
+                    case Stdin:
+                        System.out.println("* Blocking on stdin");
+                        break;
+                    case Done:
+                        System.out.println("* Done");
+                        break;
+                }
+
                 System.out.print(">>> ");
 
                 if (!scanner.hasNextLine())
@@ -160,7 +181,7 @@ public class Debugger
                 String line = scanner.nextLine();
 
                 for (String statement : line.split(";")) {
-                    String[] parts = statement.trim().split(" ", 1);
+                    String[] parts = statement.trim().split(" ", 2);
                     String commandString = parts[0];
                     DebuggerCommand command = DebuggerCommand.fromName(commandString);
                     if (command == null) {
@@ -171,6 +192,9 @@ public class Debugger
                     switch (command) {
                         case GO:
                             go();
+                            break;
+                        case INPUT:
+                            input(parts[1] + "\n");
                             break;
                         case LIST:
                             wideListToStdout(settings.listRadius);

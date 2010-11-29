@@ -40,6 +40,10 @@ public class SimulatorCore
     {
         return pc;
     }
+    public SimulatorStatus getStatus()
+    {
+        return status;
+    }
 
     public void run()
     {
@@ -243,7 +247,7 @@ public class SimulatorCore
                 checkFancyIoSupport();
                 StringBuilder builder = new StringBuilder();
                 while (true) {
-                    char c = listener.readCharacter();
+                    char c = readCharacter();
                     if (c == '\n')
                         break;
                     builder.append(c);
@@ -260,7 +264,7 @@ public class SimulatorCore
                 int cursor = registers[4];
                 int maxLenght = registers[5];
                 for (int i = 0; i < maxLenght; i++) {
-                    char c = listener.readCharacter();
+                    char c = readCharacter();
                     memory.storeByte(cursor, (byte)c);
                     if (c == '\n')
                         break;
@@ -277,7 +281,7 @@ public class SimulatorCore
                 listener.printCharacter((char)registers[4]);
                 break;
             case 12: // read_character   character (in $v0)
-                registers[2] = listener.readCharacter();
+                registers[2] = readCharacter();
                 break;
             case 13: // open   $a0 = filename, $a1 = flags, $a2 = mode   file descriptor (in $v0)
             case 14: // read   $a0 = file descriptor, $a1 = buffer, $a2 = count   bytes read (in $v0)
@@ -288,6 +292,16 @@ public class SimulatorCore
                 throw new RuntimeException("exit2 is not supported");
             default:
                 throw new RuntimeException("illegal syscall code");
+        }
+    }
+
+    private char readCharacter()
+    {
+        status = SimulatorStatus.Stdin;
+        try {
+            return listener.readCharacter();
+        } finally {
+            status = SimulatorStatus.Ready;
         }
     }
 
