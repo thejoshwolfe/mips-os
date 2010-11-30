@@ -99,7 +99,7 @@ print_asciiz:
     move $s0, $a0     # int cursor;
 
  print_asciiz__loop:
-     # if ((c = *cursor) == '\0') break;
+    # if ((c = *cursor) == '\0') break;
     lb $t0, 0($s0)
     beq $t0, $zero, print_asciiz__dl_stk
     # print_character(c);

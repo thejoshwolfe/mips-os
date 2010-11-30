@@ -160,4 +160,161 @@ interrupt_handler:
     lw $k1, 248($k0)
     kernel__jump_back: jr $k1
 
+kernel__exit:
+    li $v0, 10
+    syscall
+
+
+# user code
+
+task1__main:
+    # print_numbers(1, 10)
+    li $a0, 1
+    li $a1, 10
+    jal print_numbers
+
+    # exit()
+    jal kernel__exit
+
+task2__main:
+    # print_numbers(2, 10)
+    li $a0, 2
+    li $a1, 10
+    jal print_numbers
+
+    # exit()
+    jal kernel__exit
+
+
+
+# this function prints lines of text
+# void print_numbers(int task_number, int count)
+
+.data
+    print_numbers__first: .asciiz "task "
+    print_numbers__second: .asciiz " iteration "
+    print_numbers__third: .asciiz "\n"
+.text
+
+print_numbers:
+    # make stack
+    addi $sp, $sp, -16
+    sw $s0, 12($sp)
+    sw $s1, 8($sp)
+    sw $s2, 4($sp)
+    sw $ra, 0($sp)
+    move $s0, $a0 # int task_number
+    move $s1, $a1 # int count
+    li $s2, 0     # int i = 0
+
+ print_numbers__loop:
+    # while (i < count)
+    bge $s2, $s1, print_numbers__break
+
+    # print_asciiz(first)
+    la $a0, print_numbers__first
+    jal print_asciiz
+
+    # print_int(task_number)
+    move $a0, $s0
+    jal print_int
+
+    # print_asciiz(second)
+    la $a0, print_numbers__second
+    jal print_asciiz
+
+    # print_int(i)
+    move $a0, $s2
+    jal print_int
+
+    # print_asciiz(third)
+    la $a0, print_numbers__third
+    jal print_asciiz
+
+    # i++
+    addi $s2, $s2, 1
+    j print_numbers__loop
+
+ print_numbers__break:
+    # free stack
+    lw $s0, 12($sp)
+    lw $s1, 8($sp)
+    lw $s2, 4($sp)
+    lw $ra, 0($sp)
+    addi $sp, $sp, 16
+    jr $ra
+
+
+print_asciiz:
+    # make stack space
+    addi $sp, $sp, -8 # stack[2] = {
+    sw $s0, 4($sp)    #     $s0,
+    sw $ra, 0($sp)    #     $ra};
+    move $s0, $a0     # int cursor;
+
+ print_asciiz__loop:
+    # if ((c = *cursor) == '\0') break;
+    lb $t0, 0($s0)
+    beq $t0, $zero, print_asciiz__dl_stk
+    # print_character(c);
+    li $v0, 11
+    move $a0, $t0
+    syscall
+    # cursor++;
+    addi $s0, $s0, 1
+    j print_asciiz__loop
+
+ print_asciiz__dl_stk:
+    # delete stack space
+    lw $s0, 4($sp)   # restore $s0
+    lw $ra, 0($sp)   # restore $ra
+    addi $sp, $sp, 8 # free stack
+
+    jr $ra # return
+
+
+print_int:
+    # make stack space
+    addi $sp, $sp, -8 # stack[2] = {
+    sw $s0, 4($sp)    #     $s0,
+    sw $ra, 0($sp)    #     $ra};
+    # int value = $a0;
+    move $s0, $a0
+
+    # bool must_print = false;
+    li $t0, 0
+    # int factor = 1000000000;
+    li $t1, 1000000000
+    # const int _10 = 10;
+    li $t3, 10
+
+ print_int__loop:
+    # digit = value / factor;
+    # value = value % factor;
+    div $s0, $t1
+    mflo $t2
+    mfhi $s0
+    # if (must_print || digit != 0)
+    bne $t0, $zero, print_int__print_digit
+    beq $t2, $zero, print_int__done_printing
+  print_int__print_digit:
+    # print_character(digit + '0')
+    li $v0, 11
+    addi $a0, $t2, 48
+    syscall
+    # must_print = true
+    li $t0, 1
+
+  print_int__done_printing:
+    # factor = factor / 10;
+    div $t1, $t3
+    mflo $t1
+    # if (factor != 0) continue; else break;
+    bne $t1, $zero, print_int__loop
+
+    # delete stack space
+    lw $s0, 4($sp)   # restore $s0
+    lw $ra, 0($sp)   # restore $ra
+    addi $sp, $sp, 8 # free stack
+    jr $ra
 
