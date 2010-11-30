@@ -1,8 +1,4 @@
 
-# http://www.cs.pitt.edu/~don/coe1502/current/Unit4a/Unit4a.html
-# http://www.cs.nott.ac.uk/~txa/g51csa/l12-hand.pdf
-# http://www.d.umn.edu/~gshute/spimsal/talref.html
-
 # coprocessor0:
 #  $2: interrupt handler
 #  $4: LO
