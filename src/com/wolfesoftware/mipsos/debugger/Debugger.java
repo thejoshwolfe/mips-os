@@ -33,12 +33,12 @@ public class Debugger
             }
         }
 
-        // init the simualtor core (provide the listener later)
-        SimulatorCore simulatorCore = new SimulatorCore(debuggerOptions.simulatorOptions, null);
-        simulatorCore.loadBinary(binary);
+        // init the simualtor (provide the listener later)
+        Simulator simulator = new Simulator(debuggerOptions.simulatorOptions, null);
+        simulator.loadBinary(binary);
 
         // init the debugger (including setting the listener)
-        Debugger debugger = new Debugger(simulatorCore, debugInfo);
+        Debugger debugger = new Debugger(simulator, debugInfo);
         for (String breakAt : debuggerOptions.breakAt) {
             if (breakAt.startsWith("0x")) {
                 // address
@@ -57,7 +57,7 @@ public class Debugger
         debugger.cliMain(debuggerOptions.run);
     }
 
-    private final SimulatorCore simulatorCore;
+    private final Simulator simulator;
     private final DebugInfo debugInfo;
     private final String[] sourceLines;
     private final BlockingEvent needUserActionEvent = new BlockingEvent(true);
@@ -73,12 +73,12 @@ public class Debugger
     private final HashSet<Integer> breakpoints = new HashSet<Integer>();
     private boolean pausing;
 
-    public Debugger(SimulatorCore simulatorCore, DebugInfo debugInfo)
+    public Debugger(Simulator simulator, DebugInfo debugInfo)
     {
-        this.simulatorCore = simulatorCore;
+        this.simulator = simulator;
         this.debugInfo = debugInfo;
         this.sourceLines = Util.readLines(debugInfo.inputPath);
-        simulatorCore.listener = new ISimulatorListener() {
+        simulator.listener = new ISimulatorListener() {
             @Override
             public char readCharacter()
             {
@@ -116,31 +116,31 @@ public class Debugger
 
     public Listing list(int listRadius)
     {
-        int address = simulatorCore.getPc();
+        int address = simulator.getPc();
         int lineNumber;
         try {
             lineNumber = debugInfo.addressToLine(address);
         } catch (IllegalArgumentException e) {
-            return new Listing(new String[0], -1, -1, address, simulatorCore.getClock());
+            return new Listing(new String[0], -1, -1, address, simulator.getClock());
         }
         ArrayList<String> lines = new ArrayList<String>(listRadius);
         int start = Math.max(lineNumber - listRadius, 0);
         int end = Math.min(lineNumber + listRadius + 1, sourceLines.length);
         for (int i = start; i < end; i++)
             lines.add(sourceLines[i]);
-        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address, simulatorCore.getClock());
+        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address, simulator.getClock());
     }
     public Registers getRegisters()
     {
-        return new Registers(simulatorCore.getRegisters());
+        return new Registers(simulator.getRegisters());
     }
     private Extras getExtras()
     {
-        return simulatorCore.getExtras();
+        return simulator.getExtras();
     }
     private byte[] getMemory(int address, int length)
     {
-        return simulatorCore.getMemory(address, length);
+        return simulator.getMemory(address, length);
     }
 
     public void step()
@@ -156,7 +156,7 @@ public class Debugger
             public void run()
             {
                 for (int i = 0; i < count && !pausing; i++)
-                    simulatorCore.step();
+                    simulator.step();
 
                 needUserActionEvent.set();
             }
@@ -172,10 +172,10 @@ public class Debugger
             public void run()
             {
                 while (!pausing) {
-                    SimulatorStatus simulatorStatus = simulatorCore.step();
+                    SimulatorStatus simulatorStatus = simulator.step();
                     if (simulatorStatus != SimulatorStatus.Ready)
                         break;
-                    if (breakpoints.contains(simulatorCore.getPc()))
+                    if (breakpoints.contains(simulator.getPc()))
                         break;
                 }
                 pausing = false;
@@ -197,7 +197,7 @@ public class Debugger
     {
         if (string.isEmpty())
             return;
-        SimulatorStatus status = simulatorCore.getStatus();
+        SimulatorStatus status = simulator.getStatus();
         for (char c : string.toCharArray())
             Util.put(stdinQueue, c);
         if (status == SimulatorStatus.Stdin)
@@ -242,12 +242,12 @@ public class Debugger
             while (true) {
                 if (!needUserActionEvent.poll()) {
                     needUserActionEvent.waitForIt();
-                    if (simulatorCore.getStatus() == SimulatorStatus.Done)
+                    if (simulator.getStatus() == SimulatorStatus.Done)
                         break;
 
                     parseAndRun(settings.autoCommand);
 
-                    if (simulatorCore.getStatus() == SimulatorStatus.Stdin)
+                    if (simulator.getStatus() == SimulatorStatus.Stdin)
                         System.out.println("* Blocking on stdin");
                 }
 
