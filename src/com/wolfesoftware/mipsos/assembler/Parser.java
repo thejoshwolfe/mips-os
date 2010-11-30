@@ -337,7 +337,7 @@ public class Parser
 			if (!(tokens[i + 3] instanceof Token.LiteralLong)) // check type
 				throw new ParsingException(i + 3, PRMT_ExpectedLiteralNumber);
 			tokenLong = (Token.LiteralLong)tokens[i + 3];
-			if (!(-0x80000000 <= tokenLong.value && tokenLong.value <= 0x7FFFFFFF)) // check range
+			if (!(-0x80000000 <= tokenLong.value && tokenLong.value <= 0xFFFFFFFFL)) // check range
 				throw new ParsingException(i + 3, PRMT_NumberOutOfRange);
 			return generateRI(instr, i, i + 4, (Token.Register)tokens[i + 1], tokenLong);
 		case RCL: // eg: la $1, label
@@ -557,7 +557,7 @@ public class Parser
                     return new Bin.InstrI(Token.InstrName.InstrEnum.ADDI, 0, reg.regNum, (int)imm.value, tokenStart, tokenEnd);
                 else
                     return new Bin.Pseudo(new Bin.Instr[] { //
-                            new Bin.InstrI(Token.InstrName.InstrEnum.LUI, 0, 1, (int)((imm.value & 0xFFFF0000) >> 16), tokenStart, tokenEnd), //
+                            new Bin.InstrI(Token.InstrName.InstrEnum.LUI, 0, 1, (int)((imm.value & 0xFFFF0000) >>> 16), tokenStart, tokenEnd), //
                             new Bin.InstrI(Token.InstrName.InstrEnum.XORI, 1, reg.regNum, (int)((imm.value & 0x0000FFFF) >> 0), tokenStart, tokenEnd), //
                     }, tokenStart, tokenEnd);
             default:

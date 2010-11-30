@@ -1,6 +1,7 @@
 
 # http://www.cs.pitt.edu/~don/coe1502/current/Unit4a/Unit4a.html
 # http://www.cs.nott.ac.uk/~txa/g51csa/l12-hand.pdf
+# http://www.d.umn.edu/~gshute/spimsal/talref.html
 
 # coprocessor0:
 #  $2: interrupt handler
@@ -26,9 +27,21 @@ main:
     la $k0, interrupt_handler
     mtc0 $2, $k0
 
-    # load up each task with an initial state
 
-    # TODO
+    # load up each task with an initial state
+    la $k0, kernel__register_stash
+
+    # init $pc
+    la $k1, task1__main
+    sw $k1, 248($k0)
+    la $k1, task2__main
+    sw $k1, 252($k0)
+
+    # init $sp
+    li $k1, 0xf0000000
+    sw $k1, 208($k0)
+    li $k1, 0xe0000000
+    sw $k1, 212($k0)
 
 
     # start one of the tasks
@@ -274,6 +287,16 @@ print_asciiz:
 
 
 print_int:
+    # check for zero
+    bne $a0, $zero, print_int__normal
+    # print_character(0)
+    li $v0, 11
+    li $a0, 48
+    syscall
+    # return 
+    jr $ra
+
+ print_int__normal:
     # make stack space
     addi $sp, $sp, -8 # stack[2] = {
     sw $s0, 4($sp)    #     $s0,

@@ -296,7 +296,6 @@ public class Tokenizer
     private static Token.TokenBase tokenizeNumber(final String src, final int i) throws TokenizingException
     {
         int numStart = i;
-//		int lineLength = src.length();
         char c = src.charAt(numStart);
         if (!(c == '-' || Character.isDigit(c)))
             return null;
