@@ -39,5 +39,11 @@ public class BlockingEvent
             eventIsSet = false;
         }
     }
+    public boolean poll()
+    {
+        synchronized (lock) {
+            return eventIsSet;
+        }
+    }
 }
 

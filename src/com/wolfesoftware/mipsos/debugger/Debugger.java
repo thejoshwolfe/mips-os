@@ -1,6 +1,7 @@
 package com.wolfesoftware.mipsos.debugger;
 
 import java.io.IOException;
+import java.security.acl.LastOwnerException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -131,7 +132,12 @@ public class Debugger
         return "0x" + Util.zfill(Integer.toHexString(address), 8);
     }
 
+
     public void step()
+    {
+        step(1);
+    }
+    public void step(final int count)
     {
         needUserActionEvent.clear();
 
@@ -139,7 +145,8 @@ public class Debugger
             @Override
             public void run()
             {
-                simulatorCore.step();
+                for (int i = 0; i < count && !pausing; i++)
+                    simulatorCore.step();
 
                 needUserActionEvent.set();
             }
@@ -201,55 +208,29 @@ public class Debugger
         public void main()
         {
             Scanner scanner = new Scanner(System.in);
-
-            mainLoop: while (true) {
-                needUserActionEvent.waitForIt();
-
-                switch (simulatorCore.getStatus()) {
-                    case Stdin:
-                        System.out.println("* Blocking on stdin");
+            String lastLine = null;
+            while (true) {
+                if (!needUserActionEvent.poll()) {
+                    needUserActionEvent.waitForIt();
+                    if (simulatorCore.getStatus() == SimulatorStatus.Done)
                         break;
-                    case Done:
-                        System.out.println("* Done");
-                        break mainLoop;
+
+                    parseAndRun(settings.autoCommand);
+
+                    if (simulatorCore.getStatus()== SimulatorStatus.Stdin)
+                        System.out.println("* Blocking on stdin");
                 }
 
                 System.out.print(">>> ");
-
                 if (!scanner.hasNextLine())
                     break;
                 String line = scanner.nextLine();
+                if (lastLine != null && line.equals("."))
+                    line = lastLine;
+                else
+                    lastLine = line;
 
-                for (String[] parts : parse(line)) {
-                    String commandString = parts[0];
-                    DebuggerCommand command = DebuggerCommand.fromName(commandString);
-                    if (command == null) {
-                        System.err.println("Bad Command: " + commandString);
-                        continue;
-                    }
-
-                    switch (command) {
-                        case GO:
-                            go();
-                            break;
-                        case INPUT:
-                            input(parts[1] + "\n");
-                            break;
-                        case LIST:
-                            wideListToStdout(settings.listRadius);
-                            break;
-                        case PAUSE:
-                            pause();
-                            break;
-                        case QUIT:
-                            break mainLoop;
-                        case STEP:
-                            step();
-                            break;
-                        default:
-                            throw null;
-                    }
-                }
+                parseAndRun(line);
             }
 
             pause();
@@ -257,14 +238,13 @@ public class Debugger
             System.out.println();
             Util.put(stdinQueue, '\0');
         }
-        private String[][] parse(final String line)
+        private void parseAndRun(final String line)
         {
             class Parser
             {
-                private final ArrayList<String[]> result = new ArrayList<String[]>();
-                private final ArrayList<String> command = new ArrayList<String>();
-                private final StringBuilder token = new StringBuilder();
-                public String[][] parse()
+                private final ArrayList<String> commandBuffer = new ArrayList<String>();
+                private final StringBuilder tokenBuffer = new StringBuilder();
+                public void parseAndRun()
                 {
                     int index = 0;
                     while (index < line.length()) {
@@ -285,58 +265,155 @@ public class Debugger
                                         c = line.charAt(index++);
                                         switch (c) {
                                             case '\\':
-                                                token.append('\\');
+                                                tokenBuffer.append('\\');
                                                 break;
                                             case 'n':
-                                                token.append('\n');
+                                                tokenBuffer.append('\n');
                                                 break;
                                             default:
                                                 System.err.println("Invalid escape sequence: \\" + c);
-                                                return null;
+                                                return;
                                         }
                                     } else if (c == '"') {
-                                        if (token.length() == 0) {
+                                        if (tokenBuffer.length() == 0) {
                                             // special empty token
-                                            command.add("");
+                                            commandBuffer.add("");
                                         }
                                         break;
                                     } else {
-                                        token.append(c);
+                                        tokenBuffer.append(c);
                                     }
                                 }
                                 break;
                             default:
-                                token.append(c);
+                                tokenBuffer.append(c);
                                 break;
                         }
                     }
                     flushCommand();
-                    return result.toArray(new String[result.size()][]);
                 }
 
                 private void flushCommand()
                 {
                     flushToken();
-                    if (command.isEmpty())
+                    if (commandBuffer.isEmpty())
                         return;
-                    result.add(command.toArray(new String[command.size()]));
-                    command.clear();
+                    try {
+                        String commandName = commandBuffer.get(0);
+                        Command command = commands.get(commandName);
+                        if (command == null) {
+                            System.err.println("* Bad Command: " + commandName);
+                            return;
+                        }
+                        commandBuffer.remove(0);
+                        int argLength = commandBuffer.size();
+                        if (!(command.minArgs <= argLength)) {
+                            System.err.println("* command " + commandName + " takes at least " + command.minArgs + " argument" + (command.minArgs != 1 ? "s" : ""));
+                            return;
+                        }
+                        if (!(argLength <= command.maxArgs)) {
+                            System.err.println("* command " + commandName + " takes at most " + command.maxArgs + " argument" + (command.maxArgs != 1 ? "s" : ""));
+                            return;
+                        }
+                        command.run(commandBuffer.toArray(new String[commandBuffer.size()]));
+                    } finally {
+                        commandBuffer.clear();
+                    }
                 }
 
                 private void flushToken()
                 {
-                    if (token.length() == 0)
+                    if (tokenBuffer.length() == 0)
                         return;
-                    command.add(token.toString());
-                    token.delete(0, token.length());
+                    commandBuffer.add(tokenBuffer.toString());
+                    tokenBuffer.delete(0, tokenBuffer.length());
                 }
             }
-            return new Parser().parse();
+            new Parser().parseAndRun();
         }
-        private void wideListToStdout(int listRadius)
+        private abstract class Command
         {
-            for (String line : list(listRadius, "  ", "->"))
-                System.out.println(line);
+            public final int minArgs, maxArgs;
+            protected Command()
+            {
+                this(0, 0);
+            }
+            protected Command(int minArgs, int maxArgs)
+            {
+                this.minArgs = minArgs;
+                this.maxArgs = maxArgs;
+            }
+            abstract void run(String[] args);
+        }
+        private HashMap<String, Command> commands = new HashMap<String, Command>();
+        private void registerCommand(Command command, String... names)
+        {
+            for (String name : names)
+                commands.put(name, command);
+        }
+        {
+            registerCommand(new Command(0, 1) {
+                @Override
+                void run(String[] args)
+                {
+                    if (args.length == 0) {
+                        System.out.println(settings.autoCommand);
+                    } else {
+                        settings.autoCommand = (String)args[0];
+                    }
+                }
+            }, "auto");
+            registerCommand(new Command() {
+                @Override
+                void run(String[] args)
+                {
+                    go();
+                }
+            }, "g", "go", "continue", "resume");
+            registerCommand(new Command(1, 1) {
+                @Override
+                void run(String[] args)
+                {
+                    input((String)args[0] + "\n");
+                }
+            }, "i", "in", "stdin", "input");
+            registerCommand(new Command(0, 1) {
+                @Override
+                void run(String[] args)
+                {
+                    if (args.length != 0) {
+                        try {
+                            settings.listRadius = Integer.parseInt((String)args[0]);
+                        } catch (NumberFormatException e) {
+                            System.err.println(e.getMessage());
+                        }
+                    }
+                    for (String line : list(settings.listRadius, "  ", "->"))
+                        System.out.println(line);
+                }
+            }, "l", "ls", "list");
+            registerCommand(new Command() {
+                @Override
+                void run(String[] args)
+                {
+                    pause();
+                }
+            }, "pause");
+            registerCommand(new Command(0, 1) {
+                @Override
+                void run(String[] args)
+                {
+                    int count = 1;
+                    if (args.length != 0) {
+                        try {
+                            count = Integer.parseInt((String)args[0]);
+                        } catch (NumberFormatException e) {
+                            System.err.println(e.getMessage());
+                        }
+                    }
+                    step(count);
+                }
+            }, "s", "step");
         }
     }
 }
