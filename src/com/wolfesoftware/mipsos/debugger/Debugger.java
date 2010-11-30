@@ -61,6 +61,7 @@ public class Debugger
     private final DebugInfo debugInfo;
     private final String[] sourceLines;
     private final BlockingEvent needUserActionEvent = new BlockingEvent(true);
+    private boolean longOperationInProgress = true;
     private final Thread simulatorThread;
     private final LinkedBlockingQueue<Runnable> simulatorActions = new LinkedBlockingQueue<Runnable>();
     private static final Runnable STOP = new Runnable() {
@@ -149,7 +150,7 @@ public class Debugger
     }
     public void step(final int count)
     {
-        needUserActionEvent.clear();
+        beginLongOperation();
 
         Util.put(simulatorActions, new Runnable() {
             @Override
@@ -158,14 +159,14 @@ public class Debugger
                 for (int i = 0; i < count && !pausing; i++)
                     simulator.step();
 
-                needUserActionEvent.set();
+                finishLongOperation();
             }
         });
     }
 
     public void go()
     {
-        needUserActionEvent.clear();
+        beginLongOperation();
 
         Util.put(simulatorActions, new Runnable() {
             @Override
@@ -178,15 +179,25 @@ public class Debugger
                     if (breakpoints.contains(simulator.getPc()))
                         break;
                 }
-                pausing = false;
 
-                needUserActionEvent.set();
+                finishLongOperation();
             }
         });
     }
     public void pause()
     {
         pausing = true;
+    }
+
+    private void beginLongOperation()
+    {
+        needUserActionEvent.clear();
+        longOperationInProgress = true;
+    }
+    private void finishLongOperation()
+    {
+        pausing = false;
+        needUserActionEvent.set();
     }
 
     private void setStdinFile(String stdinFile)
@@ -200,8 +211,10 @@ public class Debugger
         SimulatorStatus status = simulator.getStatus();
         for (char c : string.toCharArray())
             Util.put(stdinQueue, c);
-        if (status == SimulatorStatus.Stdin)
-            needUserActionEvent.clear();
+        if (status == SimulatorStatus.Stdin) {
+            // this has woken the simulator back up from being blocked
+            beginLongOperation();
+        }
     }
     public void setBreakpointAtLine(int lineNumber)
     {
@@ -222,8 +235,10 @@ public class Debugger
 
     private char internalReadCharacter()
     {
-        if (stdinQueue.isEmpty())
-            needUserActionEvent.set();
+        if (stdinQueue.isEmpty()) {
+            // now blocking on stdin
+            finishLongOperation();
+        }
         return Util.take(stdinQueue);
     }
     private void internalPrintCharacter(char c)
@@ -240,8 +255,10 @@ public class Debugger
             if (run)
                 go();
             while (true) {
-                if (!needUserActionEvent.poll()) {
+                if (longOperationInProgress) {
                     needUserActionEvent.waitForIt();
+                    longOperationInProgress = false;
+
                     if (simulator.getStatus() == SimulatorStatus.Done)
                         break;
 
@@ -397,7 +414,7 @@ public class Debugger
                     if (args.length == 0) {
                         System.out.println(settings.autoCommand);
                     } else {
-                        settings.autoCommand = (String)args[0];
+                        settings.autoCommand = args[0];
                     }
                 }
             });
@@ -501,7 +518,7 @@ public class Debugger
                         System.out.print(Util.toString(stdinQueue));
                     } else {
                         // add to buffer
-                        input((String)args[0] + "\n");
+                        input(args[0] + "\n");
                     }
                 }
             });
@@ -511,7 +528,7 @@ public class Debugger
                 {
                     if (args.length != 0) {
                         try {
-                            settings.listRadius = Integer.parseInt((String)args[0]);
+                            settings.listRadius = Integer.parseInt(args[0]);
                         } catch (NumberFormatException e) {
                             System.err.println(e);
                         }
@@ -649,7 +666,7 @@ public class Debugger
                     int count = 1;
                     if (args.length != 0) {
                         try {
-                            count = Integer.parseInt((String)args[0]);
+                            count = Util.parseInt(args[0]);
                         } catch (NumberFormatException e) {
                             System.err.println(e);
                         }
