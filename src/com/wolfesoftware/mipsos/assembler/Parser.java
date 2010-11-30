@@ -545,23 +545,23 @@ public class Parser
 	}
 
 	// generates a binary element with a register operand and an immediate operand
-	private static Bin.BinBase generateRI(Token.InstrName.InstrEnum instr, int tokenStart, int tokenEnd, 
-			Token.Register reg, Token.LiteralLong imm)
-	{
-		switch (instr)
-		{
-		case LUI:
-			return new Bin.InstrI(instr, 0, reg.regNum, (int)imm.value, tokenStart, tokenEnd);
-		case LI:
-//			 TODO: check for only 16 bit immediate and use "addi $[r], $zero, [imm]" instead of two instructions
-			return new Bin.Pseudo(new Bin.Instr[] {
-					new Bin.InstrI(Token.InstrName.InstrEnum.LUI,  0,          1, (int)((imm.value & 0xFFFF0000) >> 16), tokenStart, tokenEnd),
-					new Bin.InstrI(Token.InstrName.InstrEnum.XORI, 1, reg.regNum, (int)((imm.value & 0x0000FFFF) >>  0), tokenStart, tokenEnd),
-			}, tokenStart, tokenEnd);
-		default:
-			return null;
-		}
-	}
+    private static Bin.BinBase generateRI(Token.InstrName.InstrEnum instr, int tokenStart, int tokenEnd, Token.Register reg, Token.LiteralLong imm)
+    {
+        switch (instr) {
+            case LUI:
+                return new Bin.InstrI(instr, 0, reg.regNum, (int)imm.value, tokenStart, tokenEnd);
+            case LI:
+                if ((imm.value & 0xFFFF0000) == 0)
+                    return new Bin.InstrI(Token.InstrName.InstrEnum.ADDI, 0, reg.regNum, (int)imm.value, tokenStart, tokenEnd);
+                else
+                    return new Bin.Pseudo(new Bin.Instr[] { //
+                            new Bin.InstrI(Token.InstrName.InstrEnum.LUI, 0, 1, (int)((imm.value & 0xFFFF0000) >> 16), tokenStart, tokenEnd), //
+                            new Bin.InstrI(Token.InstrName.InstrEnum.XORI, 1, reg.regNum, (int)((imm.value & 0x0000FFFF) >> 0), tokenStart, tokenEnd), //
+                    }, tokenStart, tokenEnd);
+            default:
+                return null;
+        }
+    }
 
 	// generates a binary element with a register operand and a label operand
 	private static Bin.BinBase generateRL(Token.InstrName.InstrEnum instr, int tokenStart, int tokenEnd, 
