@@ -1,7 +1,6 @@
 package com.wolfesoftware.mipsos.debugger;
 
 import java.io.IOException;
-import java.security.acl.LastOwnerException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -41,7 +40,7 @@ public class Debugger
         // init the debugger (including setting the listener)
         Debugger debugger = new Debugger(simulatorCore, debugInfo);
         if (debuggerOptions.breakAt != -1)
-            debugger.setBreakpoint(debuggerOptions.breakAt);
+            debugger.setBreakpointAtLine(debuggerOptions.breakAt);
 
         // maybe start
         if (debuggerOptions.run)
@@ -108,23 +107,22 @@ public class Debugger
         }
     }
 
-    public String[] list(int listRadius, String defaultPrefix, String currentPrefix)
+    public Listing list(int listRadius)
     {
         int address = simulatorCore.getPc();
         int lineNumber;
         try {
             lineNumber = debugInfo.addressToLine(address);
         } catch (IllegalArgumentException e) {
-            return new String[] { "[no source. " + addressToString(address) + "]" };
+            return new Listing(new String[] { "[no source. " + addressToString(address) + "]" }, -1, -1);
         }
         ArrayList<String> lines = new ArrayList<String>(listRadius);
-        for (int i = lineNumber - listRadius; i <= lineNumber + listRadius; i++) {
-            if (!(0 <= i && i < sourceLines.length))
-                continue; // out of bounds
-            String prefix = i == lineNumber ? currentPrefix : defaultPrefix;
-            lines.add(prefix + sourceLines[i]);
+        int start = Math.max(lineNumber - listRadius, 0);
+        int end = Math.min(lineNumber + listRadius + 1, sourceLines.length);
+        for (int i = start; i < end; i++) {
+            lines.add(sourceLines[i]);
         }
-        return lines.toArray(new String[lines.size()]);
+        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber);
     }
 
     private static String addressToString(int address)
@@ -187,10 +185,22 @@ public class Debugger
         }
     }
 
-    public void setBreakpoint(int lineNumber)
+    public void setBreakpointAtLine(int lineNumber)
     {
-        breakpoints.add(debugInfo.lineToAddress(lineNumber));
+        setBreakpointAtAddress(debugInfo.lineToAddress(lineNumber));
     }
+    public void setBreakpointAtAddress(int address)
+    {
+        breakpoints.add(address);
+    }
+    private boolean isBreakpointAtLine(int lineNumber)
+    {
+        for (int address : breakpoints)
+            if (debugInfo.addressToLine(address) == lineNumber)
+                return true;
+        return false;
+    }
+
 
     private char internalReadCharacter()
     {
@@ -388,8 +398,14 @@ public class Debugger
                             System.err.println(e.getMessage());
                         }
                     }
-                    for (String line : list(settings.listRadius, "  ", "->"))
-                        System.out.println(line);
+                    Listing listing = list(settings.listRadius);
+                    for (int i = 0; i < listing.lines.length; i++) {
+                        int lineNumber = i + listing.startLine;
+                        boolean current = lineNumber == listing.currentLine;
+                        boolean breakpoint = isBreakpointAtLine(lineNumber);
+                        String prefix = current ? (breakpoint ? "@>" : "->") : (breakpoint ? "@ " : "  ");
+                        System.out.println(prefix + listing.lines[i]);
+                    }
                 }
             }, "l", "ls", "list");
             registerCommand(new Command() {
