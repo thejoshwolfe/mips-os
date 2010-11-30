@@ -77,4 +77,9 @@ public final class Util
         stringBuilder.append(string);
         return stringBuilder.toString();
     }
+
+    public static <T> T[] varargs(T... array)
+    {
+        return array;
+    }
 }

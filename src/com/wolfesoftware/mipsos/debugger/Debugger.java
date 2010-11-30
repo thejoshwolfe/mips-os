@@ -356,13 +356,13 @@ public class Debugger
             abstract void run(String[] args);
         }
         private HashMap<String, Command> commands = new HashMap<String, Command>();
-        private void registerCommand(Command command, String... names)
+        private void registerCommand(String[] names, Command command)
         {
             for (String name : names)
                 commands.put(name, command);
         }
         {
-            registerCommand(new Command(0, 1) {
+            registerCommand(Util.varargs("auto"), new Command(0, 1) {
                 @Override
                 void run(String[] args)
                 {
@@ -372,8 +372,8 @@ public class Debugger
                         settings.autoCommand = (String)args[0];
                     }
                 }
-            }, "auto");
-            registerCommand(new Command(0, -1) {
+            });
+            registerCommand(Util.varargs("b", "break", "breaks", "breakpoint", "breakpoints"), new Command(0, -1) {
                 @Override
                 void run(String[] args)
                 {
@@ -456,22 +456,22 @@ public class Debugger
                         }
                     }
                 }
-            }, "b", "break", "breaks", "breakpoint", "breakpoints");
-            registerCommand(new Command() {
+            });
+            registerCommand(Util.varargs("g", "go", "continue", "resume"), new Command() {
                 @Override
                 void run(String[] args)
                 {
                     go();
                 }
-            }, "g", "go", "continue", "resume");
-            registerCommand(new Command(1, 1) {
+            });
+            registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(1, 1) {
                 @Override
                 void run(String[] args)
                 {
                     input((String)args[0] + "\n");
                 }
-            }, "i", "in", "stdin", "input");
-            registerCommand(new Command(0, 1) {
+            });
+            registerCommand(Util.varargs("l", "ls", "list"), new Command(0, 1) {
                 @Override
                 void run(String[] args)
                 {
@@ -491,15 +491,15 @@ public class Debugger
                         System.out.println(prefix + listing.lines[i]);
                     }
                 }
-            }, "l", "ls", "list");
-            registerCommand(new Command() {
+            });
+            registerCommand(Util.varargs("pause"), new Command() {
                 @Override
                 void run(String[] args)
                 {
                     pause();
                 }
-            }, "pause");
-            registerCommand(new Command(0, 1) {
+            });
+            registerCommand(Util.varargs("s", "step"), new Command(0, 1) {
                 @Override
                 void run(String[] args)
                 {
@@ -513,7 +513,7 @@ public class Debugger
                     }
                     step(count);
                 }
-            }, "s", "step");
+            });
         }
     }
 }
