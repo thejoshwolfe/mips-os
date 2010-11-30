@@ -1,0 +1,160 @@
+
+# http://www.cs.pitt.edu/~don/coe1502/current/Unit4a/Unit4a.html
+# http://www.cs.nott.ac.uk/~txa/g51csa/l12-hand.pdf
+
+# coprocessor0:
+#  $2: interrupt handler
+#  $4: LO
+#  $5: HI
+#  $9: clock
+#  $11: next timer interrupt
+#  $14: EPC - pc just before interrupt
+
+
+# task state
+.data
+    kernel__task_index: .word 0
+    kernel__register_stash: .word 0:64
+
+
+# entrypoint and init
+.text
+main:
+    # register interrupt handler
+    la $k0, interrupt_handler
+    mtc0 $2, $k0
+
+    # load up each task with an initial state
+
+    # TODO
+
+
+    # start one of the tasks
+    j kernel__load_and_start_task
+
+# interrupt handler
+interrupt_handler:
+    # get the current task index
+    la $k0, kernel__task_index
+    lw $k1, 0($k0)
+
+    # stash non-kernel registers
+    la $k0, kernel__register_stash
+    add $k0, $k0, $k1
+    # skip $zero
+    sw $1, 0($k0)
+    sw $2, 2($k0)
+    sw $3, 4($k0)
+    sw $4, 6($k0)
+    sw $5, 8($k0)
+    sw $6, 10($k0)
+    sw $7, 12($k0)
+    sw $8, 14($k0)
+    sw $9, 16($k0)
+    sw $10, 18($k0)
+    sw $11, 20($k0)
+    sw $12, 22($k0)
+    sw $13, 24($k0)
+    sw $14, 26($k0)
+    sw $15, 28($k0)
+    sw $16, 30($k0)
+    sw $17, 32($k0)
+    sw $18, 34($k0)
+    sw $19, 36($k0)
+    sw $20, 38($k0)
+    sw $21, 40($k0)
+    sw $22, 42($k0)
+    sw $23, 44($k0)
+    sw $24, 46($k0)
+    sw $25, 48($k0)
+    # skip $k0-$k1
+    sw $28, 50($k0)
+    sw $29, 52($k0)
+    sw $30, 54($k0)
+    sw $31, 56($k0)
+
+    # stash other registers
+    mflo $k1
+    sw $k1, 58($k0)
+    mfhi $k1
+    sw $k1, 60($k0)
+    # get previous pc from coprocessor0
+    mfc0 $k1, $14
+    sw $k1, 62($k0)
+
+    # toggle task index
+    la $k0, kernel__task_index
+    lw $k1, 0($k0)
+    xori $k1, $k1, 1
+    sw $k1, 0($k0)
+
+
+
+    # load a task
+    kernel__load_and_start_task:
+
+    # Set next timer interrupt.
+
+    # calculate the extra time we need before we jump back to user code
+    la $k0, kernel__jump_back
+    la $k1, kernel__clock_get
+    sub $k0, $k0, $k1
+    srl $k0, $k0, 2
+    # user gets 100 clock cycles at a time
+    addi $k0, $k0, 100
+    kernel__clock_get: mfc0 $k1, $9
+    add $k0, $k0, $k1
+    mtc0 $11, $k0
+
+
+    # load the new context
+
+    # get the new pointer
+    la $k0, kernel__task_index
+    lw $k0, 0($k0)
+    add $k0, $k0, $k1
+
+    # restore non-kernel registers
+    # skip $zero
+    lw $1, 0($k0)
+    lw $2, 2($k0)
+    lw $3, 4($k0)
+    lw $4, 6($k0)
+    lw $5, 8($k0)
+    lw $6, 10($k0)
+    lw $7, 12($k0)
+    lw $8, 14($k0)
+    lw $9, 16($k0)
+    lw $10, 18($k0)
+    lw $11, 20($k0)
+    lw $12, 22($k0)
+    lw $13, 24($k0)
+    lw $14, 26($k0)
+    lw $15, 28($k0)
+    lw $16, 30($k0)
+    lw $17, 32($k0)
+    lw $18, 34($k0)
+    lw $19, 36($k0)
+    lw $20, 38($k0)
+    lw $21, 40($k0)
+    lw $22, 42($k0)
+    lw $23, 44($k0)
+    lw $24, 46($k0)
+    lw $25, 48($k0)
+    # skip $k0-$k1
+    lw $28, 50($k0)
+    lw $29, 52($k0)
+    lw $30, 54($k0)
+    lw $31, 56($k0)
+
+    # restore other registers
+    lw $k1, 58($k0)
+    mtc0 $4, $k1
+    lw $k1, 60($k0)
+    mtc0 $5, $k1
+
+    # return to user code
+    lw $k1, 62($k0)
+    kernel__jump_back: jr $k1
+
+
