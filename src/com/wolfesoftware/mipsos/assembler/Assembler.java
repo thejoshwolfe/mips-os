@@ -57,8 +57,9 @@ public class Assembler
             fullSourceBuilder.append(inScanner.nextLine());
         }
         while (inScanner.hasNextLine()) {
+            fullSourceBuilder.append('\n');
             lineIndecies.add(fullSourceBuilder.length());
-            fullSourceBuilder.append('\n').append(inScanner.nextLine());
+            fullSourceBuilder.append(inScanner.nextLine());
         }
         String fullSource = fullSourceBuilder.toString();
 
