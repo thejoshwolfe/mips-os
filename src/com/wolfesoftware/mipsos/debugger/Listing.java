@@ -5,11 +5,13 @@ public class Listing
     public String[] lines;
     public int startLine;
     public int currentLine;
-    public Listing(String[] lines, int startLine, int currentLine)
+    public int currentAddress;
+    public Listing(String[] lines, int startLine, int currentLine, int currentAddress)
     {
         this.lines = lines;
         this.startLine = startLine;
         this.currentLine = currentLine;
+        this.currentAddress = currentAddress;
     }
     @Override
     public String toString()

@@ -114,7 +114,7 @@ public class Debugger
         try {
             lineNumber = debugInfo.addressToLine(address);
         } catch (IllegalArgumentException e) {
-            return new Listing(new String[] { "[no source. " + addressToString(address) + "]" }, -1, -1);
+            return new Listing(new String[0], -1, -1, address);
         }
         ArrayList<String> lines = new ArrayList<String>(listRadius);
         int start = Math.max(lineNumber - listRadius, 0);
@@ -122,7 +122,7 @@ public class Debugger
         for (int i = start; i < end; i++) {
             lines.add(sourceLines[i]);
         }
-        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber);
+        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address);
     }
 
     private static String addressToString(int address)
@@ -353,7 +353,7 @@ public class Debugger
                 this.minArgs = minArgs;
                 this.maxArgs = maxArgs;
             }
-            abstract void run(String[] args);
+            public abstract void run(String[] args);
         }
         private HashMap<String, Command> commands = new HashMap<String, Command>();
         private void registerCommand(String[] names, Command command)
@@ -364,7 +364,7 @@ public class Debugger
         {
             registerCommand(Util.varargs("auto"), new Command(0, 1) {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     if (args.length == 0) {
                         System.out.println(settings.autoCommand);
@@ -375,7 +375,7 @@ public class Debugger
             });
             registerCommand(Util.varargs("b", "break", "breaks", "breakpoint", "breakpoints"), new Command(0, -1) {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     if (args.length == 0) {
                         // list
@@ -407,7 +407,7 @@ public class Debugger
                                     continue;
                                 }
                                 if ((address & 3) != 0) {
-                                    System.err.println("* WARNING: word aligning address: " + addressToString(address));
+                                    System.err.println("* WARNING: word-aligning address: " + addressToString(address));
                                     address &= ~3;
                                 }
                                 if (breakpoints.remove(address)) {
@@ -459,21 +459,21 @@ public class Debugger
             });
             registerCommand(Util.varargs("g", "go", "continue", "resume"), new Command() {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     go();
                 }
             });
             registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(1, 1) {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     input((String)args[0] + "\n");
                 }
             });
             registerCommand(Util.varargs("l", "ls", "list"), new Command(0, 1) {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     if (args.length != 0) {
                         try {
@@ -490,18 +490,26 @@ public class Debugger
                         String prefix = current ? (breakpoint ? "@>" : "->") : (breakpoint ? "@ " : "  ");
                         System.out.println(prefix + listing.lines[i]);
                     }
+                    System.out.println(listing.currentLine + " [" + addressToString(listing.currentAddress) + "]");
                 }
             });
             registerCommand(Util.varargs("pause"), new Command() {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     pause();
                 }
             });
+            registerCommand(Util.varargs("r", "reg", "registers"), new Command(0, -1) {
+                @Override
+                public void run(String[] args)
+                {
+                    // TODO
+                }
+            });
             registerCommand(Util.varargs("s", "step"), new Command(0, 1) {
                 @Override
-                void run(String[] args)
+                public void run(String[] args)
                 {
                     int count = 1;
                     if (args.length != 0) {
