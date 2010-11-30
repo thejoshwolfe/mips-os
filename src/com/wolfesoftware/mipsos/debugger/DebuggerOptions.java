@@ -10,7 +10,7 @@ public class DebuggerOptions extends Options
     public SimulatorOptions simulatorOptions;
 
     public Boolean run;
-    public String breakAt = null;
+    public ArrayList<String> breakAt = new ArrayList<String>();
     public String stdinFile = null;
 
     public void parse(LinkedList<String> args)
@@ -29,7 +29,7 @@ public class DebuggerOptions extends Options
                 run = false;
                 iterator.remove();
             } else if (arg.startsWith("--break=")) {
-                breakAt = arg.substring("--break=".length());
+                breakAt.add(arg.substring("--break=".length()));
                 iterator.remove();
             } else if (arg.startsWith("--stdin-file=")) {
                 stdinFile = arg.substring("--stdin-file=".length());

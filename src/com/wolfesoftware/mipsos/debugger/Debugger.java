@@ -39,14 +39,14 @@ public class Debugger
 
         // init the debugger (including setting the listener)
         Debugger debugger = new Debugger(simulatorCore, debugInfo);
-        if (debuggerOptions.breakAt != null) {
-            if (debuggerOptions.breakAt.startsWith("0x")) {
+        for (String breakAt : debuggerOptions.breakAt) {
+            if (breakAt.startsWith("0x")) {
                 // address
-                int address = Integer.parseInt(debuggerOptions.breakAt.substring("0x".length()), 16);
+                int address = Integer.parseInt(breakAt.substring("0x".length()), 16);
                 debugger.setBreakpointAtAddress(address);
             } else {
                 // line number
-                int lineNumber = Integer.parseInt(debuggerOptions.breakAt);
+                int lineNumber = Integer.parseInt(breakAt);
                 debugger.setBreakpointAtLine(lineNumber);
             }
         }
@@ -291,7 +291,8 @@ public class Debugger
                                         c = line.charAt(index++);
                                         switch (c) {
                                             case '\\':
-                                                tokenBuffer.append('\\');
+                                            case '"':
+                                                tokenBuffer.append(c);
                                                 break;
                                             case 'n':
                                                 tokenBuffer.append('\n');
@@ -378,6 +379,13 @@ public class Debugger
                 commands.put(name, command);
         }
         {
+            registerCommand(Util.varargs("", "newline"), new Command() {
+                @Override
+                public void run(String[] args)
+                {
+                    System.out.println();
+                }
+            });
             registerCommand(Util.varargs("auto"), new Command(0, 1) {
                 @Override
                 public void run(String[] args)
@@ -512,7 +520,7 @@ public class Debugger
                         String prefix = current ? (breakpoint ? "@>" : "->") : (breakpoint ? "@ " : "  ");
                         System.out.println(prefix + listing.lines[i]);
                     }
-                    System.out.println(listing.currentLine + " [" + Util.addressToString(listing.currentAddress) + "] " + listing.clock);
+                    System.out.println(listing.currentLine + " [" + Util.addressToString(listing.currentAddress) + "]  clock: " + Util.addressToString(listing.clock));
                 }
             });
             registerCommand(Util.varargs("pause"), new Command() {
