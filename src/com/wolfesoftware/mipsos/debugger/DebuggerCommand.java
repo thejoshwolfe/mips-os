@@ -3,9 +3,12 @@ package com.wolfesoftware.mipsos.debugger;
 import java.util.HashMap;
 
 public enum DebuggerCommand {
+    AUTO("auto"), //
     GO("g", "go", "continue", "resume"), //
     INPUT("i", "in", "stdin", "input"), //
-    LIST("l", "ls", "list"),
+    LIST("l", "ls", "list"), //
+    PAUSE("pause"), //
+    QUIT("q", "quit", "exit"), //
     STEP("s", "step"), //
     ;
 

@@ -56,8 +56,15 @@ public class Debugger
     private final BlockingEvent needUserActionEvent = new BlockingEvent(true);
     private final Thread simulatorThread;
     private final LinkedBlockingQueue<Runnable> simulatorActions = new LinkedBlockingQueue<Runnable>();
+    private static final Runnable STOP = new Runnable() {
+        @Override
+        public void run()
+        {
+        }
+    };
     private final LinkedBlockingQueue<Character> stdinQueue = new LinkedBlockingQueue<Character>();
     private final HashSet<Integer> breakpoints = new HashSet<Integer>();
+    private boolean pausing;
 
     public Debugger(SimulatorCore simulatorCore, DebugInfo debugInfo)
     {
@@ -94,7 +101,7 @@ public class Debugger
     {
         while (true) {
             Runnable action = Util.take(simulatorActions);
-            if (action == null)
+            if (action == STOP)
                 break;
             action.run();
         }
@@ -147,17 +154,22 @@ public class Debugger
             @Override
             public void run()
             {
-                while (true) {
+                while (!pausing) {
                     SimulatorStatus simulatorStatus = simulatorCore.step();
                     if (simulatorStatus != SimulatorStatus.Ready)
                         break;
                     if (breakpoints.contains(simulatorCore.getPc()))
                         break;
                 }
+                pausing = false;
 
                 needUserActionEvent.set();
             }
         });
+    }
+    public void pause()
+    {
+        pausing = true;
     }
 
     public void input(String string)
@@ -190,7 +202,7 @@ public class Debugger
         {
             Scanner scanner = new Scanner(System.in);
 
-            while (true) {
+            mainLoop: while (true) {
                 needUserActionEvent.waitForIt();
 
                 switch (simulatorCore.getStatus()) {
@@ -199,7 +211,7 @@ public class Debugger
                         break;
                     case Done:
                         System.out.println("* Done");
-                        break;
+                        break mainLoop;
                 }
 
                 System.out.print(">>> ");
@@ -208,8 +220,7 @@ public class Debugger
                     break;
                 String line = scanner.nextLine();
 
-                for (String statement : line.split(";")) {
-                    String[] parts = statement.trim().split(" ", 2);
+                for (String[] parts : parse(line)) {
                     String commandString = parts[0];
                     DebuggerCommand command = DebuggerCommand.fromName(commandString);
                     if (command == null) {
@@ -227,6 +238,11 @@ public class Debugger
                         case LIST:
                             wideListToStdout(settings.listRadius);
                             break;
+                        case PAUSE:
+                            pause();
+                            break;
+                        case QUIT:
+                            break mainLoop;
                         case STEP:
                             step();
                             break;
@@ -236,7 +252,86 @@ public class Debugger
                 }
             }
 
-            Util.put(simulatorActions, null);
+            pause();
+            Util.put(simulatorActions, STOP);
+            System.out.println();
+            Util.put(stdinQueue, '\0');
+        }
+        private String[][] parse(final String line)
+        {
+            class Parser
+            {
+                private final ArrayList<String[]> result = new ArrayList<String[]>();
+                private final ArrayList<String> command = new ArrayList<String>();
+                private final StringBuilder token = new StringBuilder();
+                public String[][] parse()
+                {
+                    int index = 0;
+                    while (index < line.length()) {
+                        char c = line.charAt(index++);
+                        switch (c) {
+                            case ' ':
+                                flushToken();
+                                break;
+                            case ';':
+                                flushCommand();
+                                break;
+                            case '"':
+                                // string literal
+                                while (index < line.length()) {
+                                    c = line.charAt(index++);
+                                    if (c == '\\' && index < line.length()) {
+                                        // escape
+                                        c = line.charAt(index++);
+                                        switch (c) {
+                                            case '\\':
+                                                token.append('\\');
+                                                break;
+                                            case 'n':
+                                                token.append('\n');
+                                                break;
+                                            default:
+                                                System.err.println("Invalid escape sequence: \\" + c);
+                                                return null;
+                                        }
+                                    } else if (c == '"') {
+                                        if (token.length() == 0) {
+                                            // special empty token
+                                            command.add("");
+                                        }
+                                        break;
+                                    } else {
+                                        token.append(c);
+                                    }
+                                }
+                                break;
+                            default:
+                                token.append(c);
+                                break;
+                        }
+                    }
+                    flushCommand();
+                    return result.toArray(new String[result.size()][]);
+                }
+
+                private void flushCommand()
+                {
+                    flushToken();
+                    if (command.isEmpty())
+                        return;
+                    result.add(command.toArray(new String[command.size()]));
+                    command.clear();
+                }
+
+                private void flushToken()
+                {
+                    if (token.length() == 0)
+                        return;
+                    command.add(token.toString());
+                    token.delete(0, token.length());
+                }
+            }
+            return new Parser().parse();
         }
         private void wideListToStdout(int listRadius)
         {
