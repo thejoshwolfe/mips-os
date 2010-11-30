@@ -389,6 +389,11 @@ public class Debugger
                             }
                             System.out.println(printThis);
                         }
+                    } else if (args.length == 1 && args[0].equals("-")) {
+                        // remove all
+                        int count = breakpoints.size();
+                        breakpoints.clear();
+                        System.out.println("* all " + count + " breakpoint" + (count != 1 ? "s" : "") + " deleted");
                     } else {
                         // toggle
                         for (String arg : args) {
@@ -433,9 +438,9 @@ public class Debugger
                                     System.err.println(e.getMessage());
                                     continue;
                                 }
-                                lineNumber++;
                                 try {
                                     int address = debugInfo.lineToAddress(lineNumber);
+                                    lineNumber = debugInfo.addressToLine(address);
                                     if (breakpoints.remove(address)) {
                                         // removed
                                         System.out.println("* breakpoint deleted: " + lineNumber + " [" + addressToString(address) + "]");
