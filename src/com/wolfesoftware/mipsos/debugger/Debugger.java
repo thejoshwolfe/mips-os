@@ -227,7 +227,7 @@ public class Debugger
 
                     parseAndRun(settings.autoCommand);
 
-                    if (simulatorCore.getStatus()== SimulatorStatus.Stdin)
+                    if (simulatorCore.getStatus() == SimulatorStatus.Stdin)
                         System.out.println("* Blocking on stdin");
                 }
 
@@ -321,7 +321,7 @@ public class Debugger
                             System.err.println("* command " + commandName + " takes at least " + command.minArgs + " argument" + (command.minArgs != 1 ? "s" : ""));
                             return;
                         }
-                        if (!(argLength <= command.maxArgs)) {
+                        if (command.maxArgs != -1 && !(argLength <= command.maxArgs)) {
                             System.err.println("* command " + commandName + " takes at most " + command.maxArgs + " argument" + (command.maxArgs != 1 ? "s" : ""));
                             return;
                         }
@@ -373,6 +373,85 @@ public class Debugger
                     }
                 }
             }, "auto");
+            registerCommand(new Command(0, -1) {
+                @Override
+                void run(String[] args)
+                {
+                    if (args.length == 0) {
+                        // list
+                        for (int address : breakpoints) {
+                            String printThis;
+                            try {
+                                int lineNumber = debugInfo.addressToLine(address);
+                                printThis = lineNumber + " [" + addressToString(address) + "]";
+                            } catch (IllegalArgumentException e) {
+                                printThis = "[" + addressToString(address) + "]";
+                            }
+                            System.out.println(printThis);
+                        }
+                    } else {
+                        // toggle
+                        for (String arg : args) {
+                            if (arg.startsWith("0x")) {
+                                // address
+                                int address;
+                                try {
+                                    address = Integer.parseInt(arg.substring("0x".length()), 16);
+                                } catch (NumberFormatException e) {
+                                    System.err.println(e.getMessage());
+                                    continue;
+                                }
+                                if ((address & 3) != 0) {
+                                    System.err.println("* WARNING: word aligning address: " + addressToString(address));
+                                    address &= ~3;
+                                }
+                                if (breakpoints.remove(address)) {
+                                    // removed
+                                    try {
+                                        int lineNumber = debugInfo.addressToLine(address);
+                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + addressToString(address) + "]");
+                                    } catch (IllegalArgumentException e) {
+                                        System.out.println("* breakpoint deleted: [" + addressToString(address) + "]");
+                                    }
+                                } else {
+                                    // add
+                                    breakpoints.add(address);
+                                    try {
+                                        int lineNumber = debugInfo.addressToLine(address);
+                                        System.out.println("* breakpoint created: " + lineNumber + " [" + addressToString(address) + "]");
+                                    } catch (IllegalArgumentException e) {
+                                        System.err.println("* WARNING: no line number for address " + addressToString(address));
+                                        System.out.println("* breakpoint created: [" + addressToString(address) + "]");
+                                    }
+                                }
+                            } else {
+                                // line number
+                                int lineNumber;
+                                try {
+                                    lineNumber = Integer.parseInt(arg);
+                                } catch (NumberFormatException e) {
+                                    System.err.println(e.getMessage());
+                                    continue;
+                                }
+                                lineNumber++;
+                                try {
+                                    int address = debugInfo.lineToAddress(lineNumber);
+                                    if (breakpoints.remove(address)) {
+                                        // removed
+                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + addressToString(address) + "]");
+                                    } else {
+                                        // add
+                                        breakpoints.add(address);
+                                        System.out.println("* breakpoint created: " + lineNumber + " [" + addressToString(address) + "]");
+                                    }
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("* ERROR: no address for line number " + lineNumber);
+                                }
+                            }
+                        }
+                    }
+                }
+            }, "b", "break", "breaks", "breakpoint", "breakpoints");
             registerCommand(new Command() {
                 @Override
                 void run(String[] args)
