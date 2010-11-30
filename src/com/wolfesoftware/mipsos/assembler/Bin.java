@@ -234,6 +234,8 @@ public class Bin
                 case ANDI:    return 0x0C;
                 case ORI:     return 0x0D;
                 case XORI:    return 0x0E;
+                case MFC0:    return 0x10;
+                case MTC0:    return 0x10;
                 case LUI:     return 0x0F;
                 case LB:      return 0x20;
                 case LH:      return 0x21;
@@ -455,7 +457,9 @@ public class Bin
                 case XOR:     return 0x26;
                 case NOR:     return 0x27;
                 case SLT:     return 0x2A;
-                default:      return -1;
+                case MFC0:    return 0x00;
+                case MTC0:    return 0x00;
+                default:      throw null;
             }
         }
     }

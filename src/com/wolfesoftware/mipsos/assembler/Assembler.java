@@ -25,6 +25,7 @@ public class Assembler
         options.parse(argList);
         if (argList.size() != 1)
             throw new RuntimeException();
+        options.normalize();
         String inputPath = argList.getFirst();
 
         // call the assemble function

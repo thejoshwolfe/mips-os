@@ -13,7 +13,9 @@
 
 # task state
 .data
+    # either 0 or 4
     kernel__task_index: .word 0
+    # tasks are interlaced
     kernel__register_stash: .word 0:64
 
 
@@ -85,7 +87,7 @@ interrupt_handler:
     # toggle task index
     la $k0, kernel__task_index
     lw $k1, 0($k0)
-    xori $k1, $k1, 1
+    xori $k1, $k1, 4
     sw $k1, 0($k0)
 
 
@@ -112,6 +114,7 @@ interrupt_handler:
     # get the new pointer
     la $k0, kernel__task_index
     lw $k0, 0($k0)
+    la $k1, kernel__register_stash
     add $k0, $k0, $k1
 
     # restore non-kernel registers

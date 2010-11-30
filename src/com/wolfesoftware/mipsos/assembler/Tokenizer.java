@@ -60,6 +60,8 @@ public class Tokenizer
         stringToInstr.put("syscall", Token.InstrName.InstrEnum.SYSCALL);
         stringToInstr.put("xor", Token.InstrName.InstrEnum.XOR);
         stringToInstr.put("xori", Token.InstrName.InstrEnum.XORI);
+        stringToInstr.put("mfc0", Token.InstrName.InstrEnum.MFC0);
+        stringToInstr.put("mtc0", Token.InstrName.InstrEnum.MTC0);
         stringToInstr.put("bge", Token.InstrName.InstrEnum.BGE);
         stringToInstr.put("bgez", Token.InstrName.InstrEnum.BGEZ);
         stringToInstr.put("bgt", Token.InstrName.InstrEnum.BGT);
@@ -206,7 +208,6 @@ public class Tokenizer
             if (j < lineLength && Character.isDigit(src.charAt(j)))
                 j = i + 3; // two-digit register number
             regNum = Byte.parseByte(src.substring(i + 1, j));
-            System.out.println(src.substring(i + 1, j) + "\n" + regNum);
             if (!(0 <= regNum && regNum <= 31))
                 throw new TokenizingException(i + 1, PRMT_RegisterNumberOutOfRange);
         } else {

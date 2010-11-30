@@ -483,6 +483,8 @@ public class Parser
 	        case SYSCALL: return SyntEnum.None;
 	        case XOR:     return SyntEnum.RCRCR;
 	        case XORI:    return SyntEnum.RCRC16;
+            case MFC0:    return SyntEnum.RCR;
+            case MTC0:    return SyntEnum.RCR;
 	        case BGE:     return SyntEnum.RCRCL;
 	        case BGEZ:    return SyntEnum.RCL;
 	        case BGT:     return SyntEnum.RCRCL;
@@ -612,8 +614,12 @@ public class Parser
 			return new Bin.InstrR(instr, reg1.regNum, reg2.regNum, 0, 0, tokenStart, tokenEnd);
 		case MOVE:
 			return new Bin.InstrI(Token.InstrName.InstrEnum.ADDI, reg2.regNum, reg1.regNum, 0, tokenStart, tokenEnd);
+        case MFC0:
+            return new Bin.InstrR(instr, 0, reg2.regNum, reg1.regNum, 0, tokenStart, tokenEnd);
+        case MTC0:
+            return new Bin.InstrR(instr, 4, reg2.regNum, reg1.regNum, 0, tokenStart, tokenEnd);
 		default:
-			return null;
+			throw null;
 		}
 	}
 

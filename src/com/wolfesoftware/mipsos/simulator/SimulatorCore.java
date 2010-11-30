@@ -5,7 +5,6 @@ import java.util.Arrays;
 import com.wolfesoftware.mipsos.assembler.ByteUtils;
 import com.wolfesoftware.mipsos.common.*;
 
-
 public class SimulatorCore
 {
     // registers
@@ -13,7 +12,10 @@ public class SimulatorCore
     private int pc;
     private int hi = 0;
     private int lo = 0;
-    private long clock = 0;
+    private int clock = 0;
+    private int interruptHandler = 0;
+    private int nextTimerInterrupt = -1;
+    private int epc = 0;
 
     private Memory memory;
 
@@ -51,7 +53,7 @@ public class SimulatorCore
     {
         return status;
     }
-    public long getClock()
+    public int getClock()
     {
         return clock;
     }
@@ -101,7 +103,7 @@ public class SimulatorCore
         int targetAddress = (pc & 0xF0000000) | (target << 2);
 
         // get instruction from opcode and maybe funct
-        MipsInstr instr = MipsInstr.fromOpcodeAndFunct(opcode, funct);
+        MipsInstr instr = MipsInstr.fromOpcodeRsFunct(opcode, rs, funct);
         // execute
         switch (instr) {
             case ADD:
@@ -230,8 +232,58 @@ public class SimulatorCore
             case XORI:
                 registers[rt] = registers[rs] ^ zeroExtImm;
                 break;
+            case MFC0:
+                switch (rt) {
+                    case 2:
+                        registers[rd] = interruptHandler;
+                        break;
+                    case 4:
+                        registers[rd] = lo;
+                        break;
+                    case 5:
+                        registers[rd] = hi;
+                        break;
+                    case 9:
+                        registers[rd] = clock;
+                        break;
+                    case 11:
+                        registers[rd] = nextTimerInterrupt;
+                        break;
+                    case 14:
+                        registers[rd] = epc;
+                        break;
+                    default:
+                        throw null;
+                }
+                break;
+            case MTC0:
+                switch (rd) {
+                    case 2:
+                        interruptHandler = registers[rt];
+                        break;
+                    case 4:
+                        lo = registers[rt];
+                        break;
+                    case 5:
+                        hi = registers[rt];
+                        break;
+                    case 9:
+                        // whatever
+                        clock = registers[rt];
+                        break;
+                    case 11:
+                        nextTimerInterrupt = registers[rt];
+                        break;
+                    case 14:
+                        // whatever
+                        epc = registers[rt];
+                        break;
+                    default:
+                        throw null;
+                }
+                break;
             default:
-                throw new RuntimeException(); // TODO
+                throw null;
         }
     }
 

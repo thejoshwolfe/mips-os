@@ -23,7 +23,7 @@ public class Token
     {
         public enum InstrEnum {
             // basic instructions
-            ADD, ADDI, AND, ANDI, BEQ, BNE, BREAK, DIV, J, JAL, JALR, JR, LB, LH, LUI, LW, MFHI, MFLO, MTHI, MTLO, MULT, NOP, NOR, OR, ORI, SB, SH, SLL, SLLV, SLT, SLTI, SRA, SRAV, SRL, SRLV, SUB, SW, SYSCALL, XOR, XORI,
+            ADD, ADDI, AND, ANDI, BEQ, BNE, BREAK, DIV, J, JAL, JALR, JR, LB, LH, LUI, LW, MFHI, MFLO, MTHI, MTLO, MULT, NOP, NOR, OR, ORI, SB, SH, SLL, SLLV, SLT, SLTI, SRA, SRAV, SRL, SRLV, SUB, SW, SYSCALL, XOR, XORI, MFC0, MTC0,
             // pseudo instructions
             BGE, BGEZ, BGT, BGTZ, BLE, BLEZ, BLT, BLTZ, LA, LI, MOVE, MUL,
             // NOTE: no unsigned arithmetic instructions are supported yet (TODO)

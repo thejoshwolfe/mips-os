@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public enum MipsInstr {
     // basic instructions
-    ADD, ADDI, AND, ANDI, BEQ, BNE, BREAK, DIV, J, JAL, JALR, JR, LB, LH, LUI, LW, MFHI, MFLO, MTHI, MTLO, MULT, NOP, NOR, OR, ORI, SB, SH, SLL, SLLV, SLT, SLTI, SRA, SRAV, SRL, SRLV, SUB, SW, SYSCALL, XOR, XORI,
+    ADD, ADDI, AND, ANDI, BEQ, BNE, BREAK, DIV, J, JAL, JALR, JR, LB, LH, LUI, LW, MFHI, MFLO, MTHI, MTLO, MULT, NOP, NOR, OR, ORI, SB, SH, SLL, SLLV, SLT, SLTI, SRA, SRAV, SRL, SRLV, SUB, SW, SYSCALL, XOR, XORI, MFC0, MTC0,
     // pseudo instructions
     BGE, BGEZ, BGT, BGTZ, BLE, BLEZ, BLT, BLTZ, LA, LI, MOVE,
     // used in decoding
@@ -33,12 +33,23 @@ public enum MipsInstr {
         return hashToFunct.get(this);
     }
 
-    public static MipsInstr fromOpcodeAndFunct(int opcode, int funct)
+    public static MipsInstr fromOpcodeRsFunct(int opcode, int rs, int funct)
     {
-        if (opcode == 0)
-            return hashFromFunct.get(funct);
-        else
-            return fromOpcode(opcode);
+        switch (opcode) {
+            case 0:
+                return hashFromFunct.get(funct);
+            case 0x10:
+                switch (rs) {
+                    case 0:
+                        return MFC0;
+                    case 4:
+                        return MTC0;
+                    default:
+                        return null;
+                }
+            default:
+                return fromOpcode(opcode);
+        }
     }
 
     static {

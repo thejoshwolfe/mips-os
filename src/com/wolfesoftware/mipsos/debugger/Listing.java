@@ -6,8 +6,8 @@ public class Listing
     public final int startLine;
     public final int currentLine;
     public final int currentAddress;
-    public final long clock;
-    public Listing(String[] lines, int startLine, int currentLine, int currentAddress, long clock)
+    public final int clock;
+    public Listing(String[] lines, int startLine, int currentLine, int currentAddress, int clock)
     {
         this.lines = lines;
         this.startLine = startLine;
