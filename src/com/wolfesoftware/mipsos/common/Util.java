@@ -95,4 +95,12 @@ public final class Util
     {
         return "0x" + zfill(Integer.toHexString(address), 8);
     }
+
+    public static String toString(Iterable<Character> chars)
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (char c : chars)
+            stringBuilder.append(c);
+        return stringBuilder.toString();
+    }
 }

@@ -172,10 +172,11 @@ public class Debugger
 
     public void input(String string)
     {
-        for (char c : string.toCharArray()) {
+        SimulatorStatus status = simulatorCore.getStatus();
+        for (char c : string.toCharArray())
             Util.put(stdinQueue, c);
+        if (!string.isEmpty() && status == SimulatorStatus.Stdin)
             needUserActionEvent.clear();
-        }
     }
     public void setBreakpointAtLine(int lineNumber)
     {
@@ -397,7 +398,7 @@ public class Debugger
                                 try {
                                     address = Integer.parseInt(arg.substring("0x".length()), 16);
                                 } catch (NumberFormatException e) {
-                                    System.err.println(e.getMessage());
+                                    System.err.println(e);
                                     continue;
                                 }
                                 if ((address & 3) != 0) {
@@ -429,7 +430,7 @@ public class Debugger
                                 try {
                                     lineNumber = Integer.parseInt(arg);
                                 } catch (NumberFormatException e) {
-                                    System.err.println(e.getMessage());
+                                    System.err.println(e);
                                     continue;
                                 }
                                 try {
@@ -458,11 +459,17 @@ public class Debugger
                     go();
                 }
             });
-            registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(1, 1) {
+            registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(0, 1) {
                 @Override
                 public void run(String[] args)
                 {
-                    input((String)args[0] + "\n");
+                    if (args.length == 0) {
+                        // print uneaten buffer
+                        System.out.print(Util.toString(stdinQueue));
+                    } else {
+                        // add to buffer
+                        input((String)args[0] + "\n");
+                    }
                 }
             });
             registerCommand(Util.varargs("l", "ls", "list"), new Command(0, 1) {
@@ -473,7 +480,7 @@ public class Debugger
                         try {
                             settings.listRadius = Integer.parseInt((String)args[0]);
                         } catch (NumberFormatException e) {
-                            System.err.println(e.getMessage());
+                            System.err.println(e);
                         }
                     }
                     Listing listing = list(settings.listRadius);
@@ -527,7 +534,7 @@ public class Debugger
                         try {
                             count = Integer.parseInt((String)args[0]);
                         } catch (NumberFormatException e) {
-                            System.err.println(e.getMessage());
+                            System.err.println(e);
                         }
                     }
                     step(count);
