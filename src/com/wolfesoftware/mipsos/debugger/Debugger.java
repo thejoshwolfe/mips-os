@@ -41,6 +41,8 @@ public class Debugger
         Debugger debugger = new Debugger(simulatorCore, debugInfo);
         if (debuggerOptions.breakAt != -1)
             debugger.setBreakpointAtLine(debuggerOptions.breakAt);
+        if (debuggerOptions.stdinFile != null)
+            debugger.setStdinFile(debuggerOptions.stdinFile);
 
         // pass control to the debugger's terminal interface
         debugger.cliMain(debuggerOptions.run);
@@ -170,12 +172,18 @@ public class Debugger
         pausing = true;
     }
 
+    private void setStdinFile(String stdinFile)
+    {
+        input(Util.readFile(stdinFile));
+    }
     public void input(String string)
     {
+        if (string.isEmpty())
+            return;
         SimulatorStatus status = simulatorCore.getStatus();
         for (char c : string.toCharArray())
             Util.put(stdinQueue, c);
-        if (!string.isEmpty() && status == SimulatorStatus.Stdin)
+        if (status == SimulatorStatus.Stdin)
             needUserActionEvent.clear();
     }
     public void setBreakpointAtLine(int lineNumber)

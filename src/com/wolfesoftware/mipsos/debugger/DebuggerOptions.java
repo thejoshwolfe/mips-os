@@ -11,6 +11,7 @@ public class DebuggerOptions extends Options
 
     public Boolean run;
     public int breakAt = -1;
+    public String stdinFile = null;
 
     public void parse(LinkedList<String> args)
     {
@@ -29,6 +30,9 @@ public class DebuggerOptions extends Options
                 iterator.remove();
             } else if (arg.startsWith("--break=")) {
                 breakAt = Integer.parseInt(arg.substring("--break=".length()));
+                iterator.remove();
+            } else if (arg.startsWith("--stdin-file=")) {
+                stdinFile = arg.substring("--stdin-file=".length());
                 iterator.remove();
             }
         }

@@ -49,6 +49,23 @@ public final class Util
         return left;
     }
 
+    public static String readFile(String filename)
+    {
+        try {
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[0x1000];
+            FileReader reader = new FileReader(filename);
+            while (true) {
+                int read = reader.read(buffer);
+                if (read == -1)
+                    break;
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static String[] readLines(String inputPath)
     {
         ArrayList<String> lines = new ArrayList<String>();
