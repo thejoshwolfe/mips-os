@@ -255,7 +255,7 @@ public class Debugger
                 if (!scanner.hasNextLine())
                     break;
                 String line = scanner.nextLine();
-                if (lastLine != null && (line.equals(".") || line.equals("")))
+                if (lastLine != null && line.equals(""))
                     line = lastLine;
                 else
                     lastLine = line;

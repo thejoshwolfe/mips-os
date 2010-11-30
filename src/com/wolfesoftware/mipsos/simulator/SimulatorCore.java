@@ -94,8 +94,11 @@ public class SimulatorCore
         registers[0] = 0;
         // bump the clock and check for timer interrupts
         clock++;
-        if (clock == nextTimerInterrupt)
+        if (clock == nextTimerInterrupt) {
+            // interrupt
+            epc = pc;
             pc = interruptHandler;
+        }
     }
 
     /** has a big switch in it */
