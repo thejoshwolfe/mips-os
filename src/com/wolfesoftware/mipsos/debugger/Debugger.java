@@ -39,8 +39,17 @@ public class Debugger
 
         // init the debugger (including setting the listener)
         Debugger debugger = new Debugger(simulatorCore, debugInfo);
-        if (debuggerOptions.breakAt != -1)
-            debugger.setBreakpointAtLine(debuggerOptions.breakAt);
+        if (debuggerOptions.breakAt != null) {
+            if (debuggerOptions.breakAt.startsWith("0x")) {
+                // address
+                int address = Integer.parseInt(debuggerOptions.breakAt.substring("0x".length()), 16);
+                debugger.setBreakpointAtAddress(address);
+            } else {
+                // line number
+                int lineNumber = Integer.parseInt(debuggerOptions.breakAt);
+                debugger.setBreakpointAtLine(lineNumber);
+            }
+        }
         if (debuggerOptions.stdinFile != null)
             debugger.setStdinFile(debuggerOptions.stdinFile);
 
@@ -124,6 +133,10 @@ public class Debugger
     public Registers getRegisters()
     {
         return new Registers(simulatorCore.getRegisters());
+    }
+    private Extras getExtras()
+    {
+        return simulatorCore.getExtras();
     }
 
     public void step()
@@ -238,7 +251,7 @@ public class Debugger
                 if (!scanner.hasNextLine())
                     break;
                 String line = scanner.nextLine();
-                if (lastLine != null && line.equals("."))
+                if (lastLine != null && (line.equals(".") || line.equals("")))
                     line = lastLine;
                 else
                     lastLine = line;
@@ -550,6 +563,22 @@ public class Debugger
                         }
                     }
                     step(count);
+                }
+            });
+            registerCommand(Util.varargs("x", "extra", "extras"), new Command() {
+                private Extras previousExtras = null;
+                @Override
+                public void run(String[] args)
+                {
+                    Extras extras = getExtras();
+                    if (previousExtras == null)
+                        previousExtras = extras;
+                    System.out.print("  $hi" + (extras.hi == previousExtras.hi ? " " : "*") + "[" + Util.addressToString(extras.hi) + "] ");
+                    System.out.print("  $lo" + (extras.lo == previousExtras.lo ? " " : "*") + "[" + Util.addressToString(extras.lo) + "] ");
+                    System.out.print("$irqh" + (extras.interruptHandler == previousExtras.interruptHandler ? " " : "*") + "[" + Util.addressToString(extras.interruptHandler) + "] ");
+                    System.out.print(" $irq" + (extras.nextTimerInterrupt == previousExtras.nextTimerInterrupt ? " " : "*") + "[" + Util.addressToString(extras.nextTimerInterrupt) + "] ");
+                    System.out.println();
+                    previousExtras = extras;
                 }
             });
         }

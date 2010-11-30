@@ -115,6 +115,7 @@ interrupt_handler:
     la $k1, kernel__clock_get
     sub $k0, $k0, $k1
     srl $k0, $k0, 2
+    addi $k0, $k0, 1
     # user gets 100 clock cycles at a time
     addi $k0, $k0, 100
     kernel__clock_get: mfc0 $k1, $9
@@ -293,7 +294,7 @@ print_int:
     li $v0, 11
     li $a0, 48
     syscall
-    # return 
+    # return
     jr $ra
 
  print_int__normal:

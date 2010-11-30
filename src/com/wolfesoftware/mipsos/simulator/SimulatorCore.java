@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.wolfesoftware.mipsos.assembler.ByteUtils;
 import com.wolfesoftware.mipsos.common.*;
+import com.wolfesoftware.mipsos.debugger.Extras;
 
 public class SimulatorCore
 {
@@ -61,6 +62,10 @@ public class SimulatorCore
     {
         return registers.clone();
     }
+    public Extras getExtras()
+    {
+        return new Extras(hi, lo, interruptHandler, nextTimerInterrupt, epc);
+    }
 
     public void run()
     {
@@ -83,8 +88,10 @@ public class SimulatorCore
         executeInstruction(instruction);
         // fix the zero register
         registers[0] = 0;
-        // bump the clock
+        // bump the clock and check for timer interrupts
         clock++;
+        if (clock == nextTimerInterrupt)
+            pc = interruptHandler;
     }
 
     /** has a big switch in it */
