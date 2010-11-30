@@ -69,11 +69,19 @@ public final class Util
 
     public static String zfill(String string, int length)
     {
+        return rjust(string, length, '0');
+    }
+    public static String rjust(String string, int length)
+    {
+        return rjust(string, length, ' ');
+    }
+    public static String rjust(String string, int length, char pad)
+    {
         if (string.length() >= length)
             return string;
         StringBuilder stringBuilder = new StringBuilder(length);
         for (int i = 0; i < length - string.length(); i++)
-            stringBuilder.append('0');
+            stringBuilder.append(pad);
         stringBuilder.append(string);
         return stringBuilder.toString();
     }
@@ -81,5 +89,10 @@ public final class Util
     public static <T> T[] varargs(T... array)
     {
         return array;
+    }
+
+    public static String addressToString(int address)
+    {
+        return "0x" + zfill(Integer.toHexString(address), 8);
     }
 }

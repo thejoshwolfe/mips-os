@@ -13,6 +13,7 @@ public class SimulatorCore
     private int pc;
     private int hi = 0;
     private int lo = 0;
+    private long clock = 0;
 
     private Memory memory;
 
@@ -50,6 +51,14 @@ public class SimulatorCore
     {
         return status;
     }
+    public long getClock()
+    {
+        return clock;
+    }
+    public int[] getRegisters()
+    {
+        return registers.clone();
+    }
 
     public void run()
     {
@@ -64,12 +73,16 @@ public class SimulatorCore
 
     private void internalStep()
     {
+        // fetch
         int instruction = memory.loadWord(pc);
         pc += 4;
+        // execute
         status = SimulatorStatus.Ready; // assume success
         executeInstruction(instruction);
         // fix the zero register
         registers[0] = 0;
+        // bump the clock
+        clock++;
     }
 
     /** has a big switch in it */

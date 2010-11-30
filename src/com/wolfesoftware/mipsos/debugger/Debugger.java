@@ -114,22 +114,19 @@ public class Debugger
         try {
             lineNumber = debugInfo.addressToLine(address);
         } catch (IllegalArgumentException e) {
-            return new Listing(new String[0], -1, -1, address);
+            return new Listing(new String[0], -1, -1, address, simulatorCore.getClock());
         }
         ArrayList<String> lines = new ArrayList<String>(listRadius);
         int start = Math.max(lineNumber - listRadius, 0);
         int end = Math.min(lineNumber + listRadius + 1, sourceLines.length);
-        for (int i = start; i < end; i++) {
+        for (int i = start; i < end; i++)
             lines.add(sourceLines[i]);
-        }
-        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address);
+        return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address, simulatorCore.getClock());
     }
-
-    private static String addressToString(int address)
+    public Registers getRegisters()
     {
-        return "0x" + Util.zfill(Integer.toHexString(address), 8);
+        return new Registers(simulatorCore.getRegisters());
     }
-
 
     public void step()
     {
@@ -184,7 +181,6 @@ public class Debugger
             needUserActionEvent.clear();
         }
     }
-
     public void setBreakpointAtLine(int lineNumber)
     {
         setBreakpointAtAddress(debugInfo.lineToAddress(lineNumber));
@@ -383,9 +379,9 @@ public class Debugger
                             String printThis;
                             try {
                                 int lineNumber = debugInfo.addressToLine(address);
-                                printThis = lineNumber + " [" + addressToString(address) + "]";
+                                printThis = lineNumber + " [" + Util.addressToString(address) + "]";
                             } catch (IllegalArgumentException e) {
-                                printThis = "[" + addressToString(address) + "]";
+                                printThis = "[" + Util.addressToString(address) + "]";
                             }
                             System.out.println(printThis);
                         }
@@ -407,26 +403,26 @@ public class Debugger
                                     continue;
                                 }
                                 if ((address & 3) != 0) {
-                                    System.err.println("* WARNING: word-aligning address: " + addressToString(address));
+                                    System.err.println("* WARNING: word-aligning address: " + Util.addressToString(address));
                                     address &= ~3;
                                 }
                                 if (breakpoints.remove(address)) {
                                     // removed
                                     try {
                                         int lineNumber = debugInfo.addressToLine(address);
-                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + addressToString(address) + "]");
+                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + Util.addressToString(address) + "]");
                                     } catch (IllegalArgumentException e) {
-                                        System.out.println("* breakpoint deleted: [" + addressToString(address) + "]");
+                                        System.out.println("* breakpoint deleted: [" + Util.addressToString(address) + "]");
                                     }
                                 } else {
                                     // add
                                     breakpoints.add(address);
                                     try {
                                         int lineNumber = debugInfo.addressToLine(address);
-                                        System.out.println("* breakpoint created: " + lineNumber + " [" + addressToString(address) + "]");
+                                        System.out.println("* breakpoint created: " + lineNumber + " [" + Util.addressToString(address) + "]");
                                     } catch (IllegalArgumentException e) {
-                                        System.err.println("* WARNING: no line number for address " + addressToString(address));
-                                        System.out.println("* breakpoint created: [" + addressToString(address) + "]");
+                                        System.err.println("* WARNING: no line number for address " + Util.addressToString(address));
+                                        System.out.println("* breakpoint created: [" + Util.addressToString(address) + "]");
                                     }
                                 }
                             } else {
@@ -443,11 +439,11 @@ public class Debugger
                                     lineNumber = debugInfo.addressToLine(address);
                                     if (breakpoints.remove(address)) {
                                         // removed
-                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + addressToString(address) + "]");
+                                        System.out.println("* breakpoint deleted: " + lineNumber + " [" + Util.addressToString(address) + "]");
                                     } else {
                                         // add
                                         breakpoints.add(address);
-                                        System.out.println("* breakpoint created: " + lineNumber + " [" + addressToString(address) + "]");
+                                        System.out.println("* breakpoint created: " + lineNumber + " [" + Util.addressToString(address) + "]");
                                     }
                                 } catch (IllegalArgumentException e) {
                                     System.out.println("* ERROR: no address for line number " + lineNumber);
@@ -490,7 +486,7 @@ public class Debugger
                         String prefix = current ? (breakpoint ? "@>" : "->") : (breakpoint ? "@ " : "  ");
                         System.out.println(prefix + listing.lines[i]);
                     }
-                    System.out.println(listing.currentLine + " [" + addressToString(listing.currentAddress) + "]");
+                    System.out.println(listing.currentLine + " [" + Util.addressToString(listing.currentAddress) + "] " + listing.clock);
                 }
             });
             registerCommand(Util.varargs("pause"), new Command() {
@@ -500,11 +496,18 @@ public class Debugger
                     pause();
                 }
             });
-            registerCommand(Util.varargs("r", "reg", "registers"), new Command(0, -1) {
+            registerCommand(Util.varargs("r", "reg", "registers"), new Command() {
                 @Override
                 public void run(String[] args)
                 {
-                    // TODO
+                    Registers registers = getRegisters();
+                    for (int i = 0; i < registers.values.length; i++) {
+                        int r = i / 4 + i % 4 * 8;
+                        System.out.print(Util.rjust(Registers.NAMES[r], 5));
+                        System.out.print(" [" + Util.addressToString(registers.values[r]) + "] ");
+                        if (i % 4 == 3)
+                            System.out.println();
+                    }
                 }
             });
             registerCommand(Util.varargs("s", "step"), new Command(0, 1) {
