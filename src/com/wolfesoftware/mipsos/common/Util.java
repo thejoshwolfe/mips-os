@@ -120,4 +120,11 @@ public final class Util
             stringBuilder.append(c);
         return stringBuilder.toString();
     }
+
+    public static int parseInt(String string)
+    {
+        if (string.startsWith("0x"))
+            return Integer.parseInt(string.substring("0x".length()), 16);
+        return Integer.parseInt(string);
+    }
 }

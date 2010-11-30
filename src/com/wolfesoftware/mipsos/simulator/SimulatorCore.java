@@ -66,6 +66,10 @@ public class SimulatorCore
     {
         return new Extras(hi, lo, interruptHandler, nextTimerInterrupt, epc);
     }
+    public byte[] getMemory(int address, int length)
+    {
+        return memory.getMemory(address, length);
+    }
 
     public void run()
     {

@@ -122,4 +122,12 @@ public class Memory
         page[offset + 6] = (byte)((value & 0x000000000000FF00L) >>> 8);
         page[offset + 7] = (byte)((value & 0x00000000000000FFL) >>> 0);
     }
+
+    public byte[] getMemory(int address, int length)
+    {
+        byte[] result = new byte[length];
+        for (int i = 0; i < length; i++)
+            result[i] = loadByte(address + i);
+        return result;
+    }
 }

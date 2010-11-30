@@ -593,8 +593,8 @@ public class Parser
 			}, tokenStart, tokenEnd);
 		case LA:
 			return new Bin.Pseudo (new Bin.Instr[] {
-					new Bin.InstrIUpper(Token.InstrName.InstrEnum.LUI,  0,          1, lab.labelName, tokenStart, tokenEnd),
-					new Bin.InstrIHalf (Token.InstrName.InstrEnum.XORI, 1, reg.regNum, lab.labelName, tokenStart, tokenEnd),
+					new Bin.InstrIUpper(Token.InstrName.InstrEnum.LUI,           0, reg.regNum, lab.labelName, tokenStart, tokenEnd),
+					new Bin.InstrIHalf (Token.InstrName.InstrEnum.XORI, reg.regNum, reg.regNum, lab.labelName, tokenStart, tokenEnd),
 			}, tokenStart, tokenEnd);
 		default:
 			return null;

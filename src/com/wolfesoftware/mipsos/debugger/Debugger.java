@@ -138,6 +138,10 @@ public class Debugger
     {
         return simulatorCore.getExtras();
     }
+    private byte[] getMemory(int address, int length)
+    {
+        return simulatorCore.getMemory(address, length);
+    }
 
     public void step()
     {
@@ -521,6 +525,86 @@ public class Debugger
                         System.out.println(prefix + listing.lines[i]);
                     }
                     System.out.println(listing.currentLine + " [" + Util.addressToString(listing.currentAddress) + "]  clock: " + Util.addressToString(listing.clock));
+                }
+            });
+            registerCommand(Util.varargs("m", "memory"), new Command(1, -1) {
+                private final HashMap<Integer, Integer> previousMemory = new HashMap<Integer, Integer>();
+                @Override
+                public void run(String[] args)
+                {
+                    for (String arg : args) {
+                        try {
+                            int length = -1;
+                            int offset = 0;
+                            if (arg.contains(":")) {
+                                int index = arg.lastIndexOf(':');
+                                String lengthString = arg.substring(index + 1);
+                                arg = arg.substring(0, index);
+                                length = Util.parseInt(lengthString);
+                            }
+                            if (arg.contains("+")) {
+                                int index = arg.lastIndexOf('+');
+                                String offsetString = arg.substring(index + 1);
+                                arg = arg.substring(0, index);
+                                offset = Util.parseInt(offsetString);
+                            } else if (arg.contains("-")) {
+                                int index = arg.lastIndexOf('-');
+                                String offsetString = arg.substring(index + 1);
+                                arg = arg.substring(0, index);
+                                offset = -Util.parseInt(offsetString);
+                            }
+                            int address;
+                            try {
+                                address = Util.parseInt(arg);
+                            } catch (NumberFormatException e) {
+                                Long addressObject = debugInfo.labels.get(arg);
+                                if (addressObject == null) {
+                                    System.err.println("* ERROR: unrecognized memory address: " + arg);
+                                    continue;
+                                }
+                                address = addressObject.intValue();
+                            }
+                            int startAddress = address + offset;
+                            int endAddress = startAddress + length;
+                            startAddress &= ~3; // round down to a word
+                            endAddress = (endAddress + 3) & ~3; // round up to a word
+                            length = Math.max(endAddress - startAddress, 4); // at least 1 word
+                            if (length == 4) {
+                                // display single word
+                                byte[] memory = getMemory(startAddress, length);
+                                int value = ByteUtils.readInt(memory, 0);
+                                Integer previousValue = previousMemory.get(startAddress);
+                                if (previousValue == null) {
+                                    previousMemory.put(startAddress, value);
+                                    previousValue = value;
+                                }
+                                System.out.println(Util.addressToString(startAddress) + " " + (value == previousValue ? " " : "*") + "[" + Util.addressToString(value) + "]");
+                                continue;
+                            }
+                            // make a table
+                            int width = 0x10;
+                            startAddress &= ~(width - 1); // round down to a row
+                            endAddress = (endAddress + width - 1) & ~(width - 1); // round up to a row
+                            length = endAddress - startAddress;
+                            byte[] memory = getMemory(startAddress, length);
+                            for (int i = 0; i < length; i += 4) {
+                                address = startAddress + i;
+                                if ((i & (width -1)) == 0)
+                                    System.out.print(Util.addressToString(address));
+                                int value = ByteUtils.readInt(memory, i);
+                                Integer previousValue = previousMemory.get(address);
+                                if (previousValue == null) {
+                                    previousMemory.put(address, value);
+                                    previousValue = value;
+                                }
+                                System.out.print(" " + (value == previousValue ? " " : "*") + "[" + Util.addressToString(value) + "]");
+                                if ((i & width -1) == width - 4)
+                                    System.out.println();
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println(e);
+                        }
+                    }
                 }
             });
             registerCommand(Util.varargs("pause"), new Command() {
