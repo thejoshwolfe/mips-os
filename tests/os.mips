@@ -113,7 +113,7 @@ interrupt_handler:
     srl $k0, $k0, 2
     addi $k0, $k0, 1
     # user gets this many clock cycles at a time
-    addi $k0, $k0, 1000
+    addi $k0, $k0, 1002
     kernel__clock_get: mfc0 $k1, $9
     add $k0, $k0, $k1
     mtc0 $11, $k0

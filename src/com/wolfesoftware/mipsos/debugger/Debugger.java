@@ -166,17 +166,23 @@ public class Debugger
 
     public void go()
     {
+        go(-1);
+    }
+    public void go(final int until)
+    {
         beginLongOperation();
 
         Util.put(simulatorActions, new Runnable() {
             @Override
             public void run()
             {
-                while (!pausing) {
+                for (int i = simulator.getClock(); until == -1 || i < until; i++) {
                     SimulatorStatus simulatorStatus = simulator.step();
                     if (simulatorStatus != SimulatorStatus.Ready)
                         break;
                     if (breakpoints.contains(simulator.getPc()))
+                        break;
+                    if (pausing)
                         break;
                 }
 
@@ -502,11 +508,19 @@ public class Debugger
                     }
                 }
             });
-            registerCommand(Util.varargs("g", "go", "continue", "resume"), new Command() {
+            registerCommand(Util.varargs("g", "go", "continue", "resume"), new Command(0, 1) {
                 @Override
                 public void run(String[] args)
                 {
-                    go();
+                    int until = -1;
+                    if (args.length != 0) {
+                        try {
+                            until = Util.parseInt(args[0]);
+                        } catch (NumberFormatException e) {
+                            System.err.println(e);
+                        }
+                    }
+                    go(until);
                 }
             });
             registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(0, 1) {
@@ -674,11 +688,19 @@ public class Debugger
                     step(count);
                 }
             });
-            registerCommand(Util.varargs("x", "extra", "extras"), new Command() {
+            registerCommand(Util.varargs("x", "extra", "extras"), new Command(0, 1) {
                 private Extras previousExtras = null;
                 @Override
                 public void run(String[] args)
                 {
+                    if (args.length != 0) {
+                        if (args[0].equals("4"))
+                            settings.reigsterDisplayWidth = 4;
+                        else if (args[0].equals("8"))
+                            settings.reigsterDisplayWidth = 8;
+                        else
+                            System.err.println("* ERROR: only display with 4 and 8 are allowed");
+                    }
                     Extras extras = getExtras();
                     if (previousExtras == null)
                         previousExtras = extras;
@@ -686,6 +708,10 @@ public class Debugger
                     System.out.print("  $lo" + (extras.lo == previousExtras.lo ? " " : "*") + "[" + Util.addressToString(extras.lo) + "] ");
                     System.out.print("$irqh" + (extras.interruptHandler == previousExtras.interruptHandler ? " " : "*") + "[" + Util.addressToString(extras.interruptHandler) + "] ");
                     System.out.print(" $irq" + (extras.nextTimerInterrupt == previousExtras.nextTimerInterrupt ? " " : "*") + "[" + Util.addressToString(extras.nextTimerInterrupt) + "] ");
+                    if (settings.reigsterDisplayWidth == 8) {
+                        System.out.print(" $epc" + (extras.epc == previousExtras.epc ? " " : "*") + "[" + Util.addressToString(extras.epc) + "] ");
+                    }
+                        
                     System.out.println();
                     previousExtras = extras;
                 }
