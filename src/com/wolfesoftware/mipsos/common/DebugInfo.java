@@ -50,7 +50,7 @@ public class DebugInfo
     }
     public int addressToLine(int address)
     {
-        Entry<Integer, Integer> entry = addressToLineMap.ceilingEntry(address);
+        Entry<Integer, Integer> entry = addressToLineMap.floorEntry(address);
         if (entry == null)
             throw new IllegalArgumentException();
         return entry.getValue();

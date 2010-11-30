@@ -510,10 +510,13 @@ public class Debugger
                 }
             });
             registerCommand(Util.varargs("r", "reg", "registers"), new Command(0, 1) {
+                private Registers previousRegisters = null;
                 @Override
                 public void run(String[] args)
                 {
                     Registers registers = getRegisters();
+                    if (previousRegisters == null)
+                        previousRegisters = registers; // avoid npe's
                     if (args.length == 1) {
                         if (args[0].equals("4"))
                             settings.reigsterDisplayWidth = 4;
@@ -527,10 +530,11 @@ public class Debugger
                     for (int i = 0; i < registers.values.length; i++) {
                         int r = i / width + i % width * height;
                         System.out.print(Util.rjust(Registers.NAMES[r], 5));
-                        System.out.print(" [" + Util.addressToString(registers.values[r]) + "] ");
+                        System.out.print((registers.values[r] == previousRegisters.values[r] ? " " : "*") + "[" + Util.addressToString(registers.values[r]) + "] ");
                         if ((i + 1) % width == 0)
                             System.out.println();
                     }
+                    previousRegisters = registers;
                 }
             });
             registerCommand(Util.varargs("s", "step"), new Command(0, 1) {
