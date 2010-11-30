@@ -42,12 +42,8 @@ public class Debugger
         if (debuggerOptions.breakAt != -1)
             debugger.setBreakpointAtLine(debuggerOptions.breakAt);
 
-        // maybe start
-        if (debuggerOptions.run)
-            debugger.go();
-
         // pass control to the debugger's terminal interface
-        debugger.cliMain();
+        debugger.cliMain(debuggerOptions.run);
     }
 
     private final SimulatorCore simulatorCore;
@@ -93,9 +89,9 @@ public class Debugger
         simulatorThread.start();
     }
 
-    private void cliMain()
+    private void cliMain(boolean run)
     {
-        new Cli().main();
+        new Cli().main(run);
     }
     private void simulatorThreadMain()
     {
@@ -211,10 +207,12 @@ public class Debugger
     private class Cli
     {
         private CliSettings settings = new CliSettings();
-        public void main()
+        public void main(boolean run)
         {
             Scanner scanner = new Scanner(System.in);
             String lastLine = null;
+            if (run)
+                go();
             while (true) {
                 if (!needUserActionEvent.poll()) {
                     needUserActionEvent.waitForIt();
@@ -496,16 +494,26 @@ public class Debugger
                     pause();
                 }
             });
-            registerCommand(Util.varargs("r", "reg", "registers"), new Command() {
+            registerCommand(Util.varargs("r", "reg", "registers"), new Command(0, 1) {
                 @Override
                 public void run(String[] args)
                 {
                     Registers registers = getRegisters();
+                    if (args.length == 1) {
+                        if (args[0].equals("4"))
+                            settings.reigsterDisplayWidth = 4;
+                        else if (args[0].equals("8"))
+                            settings.reigsterDisplayWidth = 8;
+                        else
+                            System.err.println("* ERROR: only reigster display widths of 4 and 8 are supported");
+                    }
+                    int width = settings.reigsterDisplayWidth;
+                    int height = 32 / width;
                     for (int i = 0; i < registers.values.length; i++) {
-                        int r = i / 4 + i % 4 * 8;
+                        int r = i / width + i % width * height;
                         System.out.print(Util.rjust(Registers.NAMES[r], 5));
                         System.out.print(" [" + Util.addressToString(registers.values[r]) + "] ");
-                        if (i % 4 == 3)
+                        if ((i + 1) % width == 0)
                             System.out.println();
                     }
                 }
