@@ -695,7 +695,7 @@ public class Parser
 		case XOR:
 		case NOR:
 		case SLT:
-			return new Bin.InstrR(instr, reg1.regNum, reg2.regNum, reg3.regNum, 0, tokenStart, tokenEnd);
+			return new Bin.InstrR(instr, reg2.regNum, reg3.regNum, reg1.regNum, 0, tokenStart, tokenEnd);
 		case MUL:
             return new Bin.Pseudo(new Bin.Instr[] {
                     new Bin.InstrR(Token.InstrName.InstrEnum.MULT, reg2.regNum, reg3.regNum, 0, 0, tokenStart, tokenEnd),
