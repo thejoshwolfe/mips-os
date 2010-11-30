@@ -9,6 +9,11 @@ import com.wolfesoftware.mipsos.assembler.ByteUtils;
 public class Segment
 {
     public static final String ATTRIBUTE_ADDRESS = "address";
+    public static final String ATTRIBUTE_TYPE = "type";
+    public static final byte[] TYPE_MEMORY = "memory".getBytes();
+    public static final byte[] TYPE_DEBUGINFO = "debuginfo".getBytes();
+    public static final byte[] TYPE_ENTRYPOINT = "entrypoint".getBytes();
+
     public final HashMap<String, byte[]> attributes;
     public final byte[] bytes;
     public final int offset;

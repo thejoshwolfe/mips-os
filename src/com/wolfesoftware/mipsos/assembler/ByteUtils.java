@@ -161,8 +161,9 @@ public final class ByteUtils
     {
         int length = readInt(inStream);
         byte[] bytes = new byte[length];
-        if (inStream.read(bytes) < length)
-            throw new RuntimeException();
+        if (length > 0)
+            if (inStream.read(bytes) < length)
+                throw new RuntimeException();
         return bytes;
     }
     public static void writeByteArray(OutputStream outStream, byte[] bytes) throws IOException
@@ -174,5 +175,4 @@ public final class ByteUtils
         writeInt(outStream, length);
         outStream.write(bytes, offset, length);
     }
-
 }

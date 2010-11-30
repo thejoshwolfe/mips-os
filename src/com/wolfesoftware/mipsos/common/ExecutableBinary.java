@@ -11,20 +11,15 @@ public class ExecutableBinary
 {
     private static final int MAGIC_NUMBER = 0x981dc595;
     public final Segment[] segments;
-    public final int executableEntryPoint;
-    public ExecutableBinary(Segment[] segments, int executableEntryPoint)
+    public ExecutableBinary(Segment[] segments)
     {
         this.segments = segments;
-        this.executableEntryPoint = executableEntryPoint;
     }
 
     public void encode(OutputStream outStream) throws IOException
     {
         // magic number
         ByteUtils.writeInt(outStream, MAGIC_NUMBER);
-
-        // entry point
-        ByteUtils.writeInt(outStream, executableEntryPoint);
 
         // segments
         ByteUtils.writeInt(outStream, segments.length);
@@ -39,15 +34,12 @@ public class ExecutableBinary
         if (magicNumber != MAGIC_NUMBER)
             throw new RuntimeException();
 
-        // entry point
-        int entryPoint = ByteUtils.readInt(inStream);
-
         // segments
         int segmentsCount = ByteUtils.readInt(inStream);
         Segment[] segments = new Segment[segmentsCount];
         for (int i = 0; i < segmentsCount; i++)
             segments[i] = Segment.decode(inStream);
 
-        return new ExecutableBinary(segments, entryPoint);
+        return new ExecutableBinary(segments);
     }
 }

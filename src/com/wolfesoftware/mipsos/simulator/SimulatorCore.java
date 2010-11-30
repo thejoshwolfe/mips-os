@@ -1,5 +1,7 @@
 package com.wolfesoftware.mipsos.simulator;
 
+import java.util.Arrays;
+
 import com.wolfesoftware.mipsos.assembler.ByteUtils;
 import com.wolfesoftware.mipsos.common.*;
 
@@ -28,13 +30,17 @@ public class SimulatorCore
     public void loadBinary(ExecutableBinary binary)
     {
         for (Segment segment : binary.segments) {
-            byte[] addressBytes = segment.attributes.get(Segment.ATTRIBUTE_ADDRESS);
-            if (addressBytes == null)
-                continue;
-            int address = ByteUtils.readInt(addressBytes, 0);
-            memory.storeBytes(segment.bytes, segment.offset, segment.length, address);
+            byte[] type = segment.attributes.get(Segment.ATTRIBUTE_TYPE);
+            if (Arrays.equals(type, Segment.TYPE_MEMORY)) {
+                byte[] addressBytes = segment.attributes.get(Segment.ATTRIBUTE_ADDRESS);
+                int address = ByteUtils.readInt(addressBytes, 0);
+                memory.storeBytes(segment.bytes, segment.offset, segment.length, address);
+            } else if (Arrays.equals(type, Segment.TYPE_ENTRYPOINT)) {
+                byte[] addressBytes = segment.attributes.get(Segment.ATTRIBUTE_ADDRESS);
+                int address = ByteUtils.readInt(addressBytes, 0);
+                pc = address;
+            }
         }
-        pc = binary.executableEntryPoint;
     }
     public int getPc()
     {

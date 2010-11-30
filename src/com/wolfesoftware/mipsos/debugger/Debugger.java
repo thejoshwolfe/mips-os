@@ -24,13 +24,21 @@ public class Debugger
 
         // assemble source
         ExecutableBinary binary = Assembler.assembleToBinary(inputPath, debuggerOptions.simulatorOptions.assemblerOptions);
+        // grab the debug info
+        DebugInfo debugInfo = null;
+        for (Segment segment : binary.segments) {
+            if (Arrays.equals(segment.attributes.get(Segment.ATTRIBUTE_TYPE), Segment.TYPE_DEBUGINFO)) {
+                debugInfo = DebugInfo.fromSegment(segment);
+                break;
+            }
+        }
 
         // init the simualtor core (provide the listener later)
         SimulatorCore simulatorCore = new SimulatorCore(debuggerOptions.simulatorOptions, null);
         simulatorCore.loadBinary(binary);
 
         // init the debugger (including setting the listener)
-        Debugger debugger = new Debugger(simulatorCore);
+        Debugger debugger = new Debugger(simulatorCore, debugInfo);
         if (debuggerOptions.breakAt != -1)
             debugger.setBreakpoint(debuggerOptions.breakAt);
 
@@ -43,15 +51,19 @@ public class Debugger
     }
 
     private final SimulatorCore simulatorCore;
+    private final DebugInfo debugInfo;
+    private final String[] sourceLines;
     private final BlockingEvent needUserActionEvent = new BlockingEvent(true);
     private final Thread simulatorThread;
     private final LinkedBlockingQueue<Runnable> simulatorActions = new LinkedBlockingQueue<Runnable>();
     private final LinkedBlockingQueue<Character> stdinQueue = new LinkedBlockingQueue<Character>();
     private final HashSet<Integer> breakpoints = new HashSet<Integer>();
 
-    public Debugger(SimulatorCore simulatorCore)
+    public Debugger(SimulatorCore simulatorCore, DebugInfo debugInfo)
     {
         this.simulatorCore = simulatorCore;
+        this.debugInfo = debugInfo;
+        this.sourceLines = Util.readLines(debugInfo.inputPath);
         simulatorCore.listener = new ISimulatorListener() {
             @Override
             public char readCharacter()
@@ -88,10 +100,28 @@ public class Debugger
         }
     }
 
-    public String[] wideList(int listRadius)
+    public String[] list(int listRadius, String defaultPrefix, String currentPrefix)
     {
-        return new String[] { "TODO: wide list" };
-        // TODO
+        int address = simulatorCore.getPc();
+        int lineNumber;
+        try {
+            lineNumber = debugInfo.addressToLine(address);
+        } catch (IllegalArgumentException e) {
+            return new String[] { "[no source. " + addressToString(address) + "]" };
+        }
+        ArrayList<String> lines = new ArrayList<String>(listRadius);
+        for (int i = lineNumber - listRadius; i <= lineNumber + listRadius; i++) {
+            if (!(0 <= i && i < sourceLines.length))
+                continue; // out of bounds
+            String prefix = i == lineNumber ? currentPrefix : defaultPrefix;
+            lines.add(prefix + sourceLines[i]);
+        }
+        return lines.toArray(new String[lines.size()]);
+    }
+
+    private static String addressToString(int address)
+    {
+        return "0x" + Util.zfill(Integer.toHexString(address), 8);
     }
 
     public void step()
@@ -140,8 +170,7 @@ public class Debugger
 
     public void setBreakpoint(int lineNumber)
     {
-        // TODO: translate line number to address
-        breakpoints.add(lineNumber);
+        breakpoints.add(debugInfo.lineToAddress(lineNumber));
     }
 
     private char internalReadCharacter()
@@ -164,8 +193,7 @@ public class Debugger
             while (true) {
                 needUserActionEvent.waitForIt();
 
-                switch (simulatorCore.getStatus())
-                {
+                switch (simulatorCore.getStatus()) {
                     case Stdin:
                         System.out.println("* Blocking on stdin");
                         break;
@@ -212,7 +240,7 @@ public class Debugger
         }
         private void wideListToStdout(int listRadius)
         {
-            for (String line : wideList(listRadius))
+            for (String line : list(listRadius, "  ", "->"))
                 System.out.println(line);
         }
     }

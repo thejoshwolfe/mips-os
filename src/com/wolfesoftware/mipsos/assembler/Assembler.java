@@ -68,7 +68,7 @@ public class Assembler
             tokens = Tokenizer.tokenize(fullSource);
         } catch (TokenizingException e) {
             int srcLocation = e.srcLocation;
-            int line = findInList(lineIndecies, srcLocation);
+            int line = Util.findInList(lineIndecies, srcLocation);
             int col = srcLocation - lineIndecies.get(line);
             throw new CompilingException(srcLocation, line + 1, col + 1, 1, e.message);
         }
@@ -79,7 +79,7 @@ public class Assembler
             binarization = Parser.parse(tokens, options.dataAddress, options.textAddress);
         } catch (ParsingException e) {
             Token.TokenBase token = tokens[e.tokenIndex];
-            int startLine = findInList(lineIndecies, token.srcStart);
+            int startLine = Util.findInList(lineIndecies, token.srcStart);
             throw new CompilingException(token.srcStart, startLine + 1, token.srcStart - lineIndecies.get(startLine), token.srcEnd - token.srcStart, e.message);
         }
 
@@ -123,30 +123,50 @@ public class Assembler
             verboseOutput(binarization.textElems, printStream, ".text", options.textAddress, binarization.labels, true, tokens, fullSource);
         } else {
             ArrayList<Segment> segments = new ArrayList<Segment>();
+            DebugInfo debugInfo = options.debugInfo ? new DebugInfo(inputPath, binarization.labels) : null;
+
             // .data section
             ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
-            nonverboseOutput(options.dataAddress, binarization.dataElems, dataSection, binarization.labels);
-            segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.dataAddr), dataSection.toByteArray()));
+            nonverboseOutput(options.dataAddress, binarization.dataElems, binarization.labels, dataSection);
+            segments.add(makeMemorySegment(binarization.header.dataAddr, dataSection.toByteArray()));
+            if (debugInfo != null)
+                debugInfo.write(options.dataAddress, binarization.dataElems, binarization.labels, lineIndecies, tokens);
 
             // .text section
             ByteArrayOutputStream textSection = new ByteArrayOutputStream();
-            nonverboseOutput(options.textAddress, binarization.textElems, textSection, binarization.labels);
-            segments.add(new Segment(makeAddressOnlyAttributes(binarization.header.textAddr), textSection.toByteArray()));
+            nonverboseOutput(options.textAddress, binarization.textElems, binarization.labels, textSection);
+            segments.add(makeMemorySegment(binarization.header.textAddr, textSection.toByteArray()));
+            if (debugInfo != null)
+                debugInfo.write(options.textAddress, binarization.textElems, binarization.labels, lineIndecies, tokens);
 
-            int executableEntryPoint = binarization.labels.get("main").intValue();
+            // debug info segment
+            if (debugInfo != null)
+                segments.add(debugInfo.toSegment());
+
+            // entrypoint segment
+            int entryPoint = binarization.labels.get("main").intValue();
+            segments.add(makeEntrypointSegment(entryPoint));
+
             Segment[] segmentsArray = segments.toArray(new Segment[segments.size()]);
-            ExecutableBinary binary = new ExecutableBinary(segmentsArray, executableEntryPoint);
+            ExecutableBinary binary = new ExecutableBinary(segmentsArray);
             binary.encode(options.outStream);
         }
     }
 
-    private static HashMap<String, byte[]> makeAddressOnlyAttributes(int address)
+    private static Segment makeEntrypointSegment(int entryPoint)
     {
         HashMap<String, byte[]> attributes = new HashMap<String, byte[]>();
-        String key = Segment.ATTRIBUTE_ADDRESS;
-        byte[] value = ByteUtils.convertInt(address);
-        attributes.put(key, value);
-        return attributes;
+        attributes.put(Segment.ATTRIBUTE_TYPE, Segment.TYPE_ENTRYPOINT);
+        attributes.put(Segment.ATTRIBUTE_ADDRESS, ByteUtils.convertInt(entryPoint));
+        return new Segment(attributes, new byte[0]);
+    }
+
+    private static Segment makeMemorySegment(int address, byte[] bytes)
+    {
+        HashMap<String, byte[]> attributes = new HashMap<String, byte[]>();
+        attributes.put(Segment.ATTRIBUTE_TYPE, Segment.TYPE_MEMORY);
+        attributes.put(Segment.ATTRIBUTE_ADDRESS, ByteUtils.convertInt(address));
+        return new Segment(attributes, bytes);
     }
 
     private static void verboseOutput(Bin.BinBase[] elems, PrintStream printStream, String sectionTitle, long baseAddress, HashMap<String, Long> labels, boolean useAddress,
@@ -173,7 +193,7 @@ public class Assembler
         }
     }
 
-    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, OutputStream outStream, HashMap<String, Long> labels) throws IOException
+    private static void nonverboseOutput(long baseAddress, Bin.BinBase[] binElems, HashMap<String, Long> labels, OutputStream outStream) throws IOException
     {
         long addr = baseAddress;
         for (Bin.BinBase binElem : binElems) {
@@ -181,20 +201,6 @@ public class Assembler
             outStream.write(data);
             addr += data.length;
         }
-    }
-
-    private static int findInList(ArrayList<Integer> list, int target)
-    {
-        // iterative binary search
-        int left = 0, right = list.size() - 1, mid;
-        while (left < right) {
-            mid = (left + right + 1) >> 1; // midpoint rounded up
-            if (target < list.get(mid))
-                right = mid - 1;
-            else
-                left = mid;
-        }
-        return left;
     }
 
     // validates the address into the 32-bit unsigned range and returns a String
