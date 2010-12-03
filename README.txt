@@ -11,6 +11,15 @@ to build:
 to run:
     ./run_simulator.sh tests/os.mips
 
+to run the debugger:
+    ./run_debugger.sh tests/os.mips --no-run
+
+some useful debugger commands:
+    s, step: steps one machine instruction
+    go: runs from that point onward
+    b, break: displays or sets breakpoints at line numbers or addresses
+    <just pressing enter>: runs the last command again
+
 
 References:
 

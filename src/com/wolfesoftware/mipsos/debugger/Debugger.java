@@ -253,7 +253,7 @@ public class Debugger
     }
     private class Cli
     {
-        private CliSettings settings = new CliSettings();
+        private CliSettings settings = CliSettings.load();
         public void main(boolean run)
         {
             Scanner scanner = new Scanner(System.in);
@@ -523,6 +523,14 @@ public class Debugger
                     go(until);
                 }
             });
+            registerCommand(Util.varargs("h", "help"), new Command(0, -1) {
+                @Override
+                public void run(String[] args)
+                {
+                    System.out.println("* help: see the source code :/ ");
+                    System.out.println("* check out Debugger.java. search for \"registerCommand\".");
+                }
+            });
             registerCommand(Util.varargs("i", "in", "stdin", "input"), new Command(0, 1) {
                 @Override
                 public void run(String[] args)
@@ -620,7 +628,7 @@ public class Debugger
                             byte[] memory = getMemory(startAddress, length);
                             for (int i = 0; i < length; i += 4) {
                                 address = startAddress + i;
-                                if ((i & (width -1)) == 0)
+                                if ((i & (width - 1)) == 0)
                                     System.out.print(Util.addressToString(address));
                                 int value = ByteUtils.readInt(memory, i);
                                 Integer previousValue = previousMemory.get(address);
@@ -629,7 +637,7 @@ public class Debugger
                                     previousValue = value;
                                 }
                                 System.out.print(" " + (value == previousValue ? " " : "*") + "[" + Util.addressToString(value) + "]");
-                                if ((i & width -1) == width - 4)
+                                if ((i & width - 1) == width - 4)
                                     System.out.println();
                             }
                         } catch (NumberFormatException e) {
@@ -711,7 +719,7 @@ public class Debugger
                     if (settings.reigsterDisplayWidth == 8) {
                         System.out.print(" $epc" + (extras.epc == previousExtras.epc ? " " : "*") + "[" + Util.addressToString(extras.epc) + "] ");
                     }
-                        
+
                     System.out.println();
                     previousExtras = extras;
                 }
