@@ -46,7 +46,7 @@ public class CliSettings
                 if (line.equals("") || line.startsWith("#"))
                     continue;
                 String[] keyAndValue = line.split("=", 2);
-                String key = keyAndValue[0], value = keyAndValue[1];
+                String key = keyAndValue[0].trim(), value = keyAndValue[1].trim();
                 try {
                     Field field = CliSettings.class.getField(key);
                     field.set(settings, value);
