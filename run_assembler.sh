@@ -1,1 +1,1 @@
-java -cp bin/ com.wolfesoftware.mipsos.assembler.Assembler "$@"
+java -cp $(dirname $0)/bin/ com.wolfesoftware.mipsos.assembler.Assembler "$@"
