@@ -515,7 +515,7 @@ public class Debugger
                     int until = -1;
                     if (args.length != 0) {
                         try {
-                            until = Util.parseInt(args[0]);
+                            until = evalInt(args[0]);
                         } catch (NumberFormatException e) {
                             System.err.println(e);
                         }
@@ -579,22 +579,22 @@ public class Debugger
                                 int index = arg.lastIndexOf(':');
                                 String lengthString = arg.substring(index + 1);
                                 arg = arg.substring(0, index);
-                                length = Util.parseInt(lengthString);
+                                length = evalInt(lengthString);
                             }
                             if (arg.contains("+")) {
                                 int index = arg.lastIndexOf('+');
                                 String offsetString = arg.substring(index + 1);
                                 arg = arg.substring(0, index);
-                                offset = Util.parseInt(offsetString);
+                                offset = evalInt(offsetString);
                             } else if (arg.contains("-")) {
                                 int index = arg.lastIndexOf('-');
                                 String offsetString = arg.substring(index + 1);
                                 arg = arg.substring(0, index);
-                                offset = -Util.parseInt(offsetString);
+                                offset = -evalInt(offsetString);
                             }
                             int address;
                             try {
-                                address = Util.parseInt(arg);
+                                address = evalInt(arg);
                             } catch (NumberFormatException e) {
                                 Long addressObject = debugInfo.labels.get(arg);
                                 if (addressObject == null) {
@@ -639,6 +639,7 @@ public class Debugger
                                 System.out.print(" " + (value == previousValue ? " " : "*") + "[" + Util.addressToString(value) + "]");
                                 if ((i & width - 1) == width - 4)
                                     System.out.println();
+                                previousMemory.put(address, value);
                             }
                         } catch (NumberFormatException e) {
                             System.err.println(e);
@@ -688,7 +689,7 @@ public class Debugger
                     int count = 1;
                     if (args.length != 0) {
                         try {
-                            count = Util.parseInt(args[0]);
+                            count = evalInt(args[0]);
                         } catch (NumberFormatException e) {
                             System.err.println(e);
                         }
@@ -724,6 +725,27 @@ public class Debugger
                     previousExtras = extras;
                 }
             });
+        }
+        private Integer evalInt(String string)
+        {
+            if (string.equals(""))
+                return Integer.parseInt(""); // crash
+            if (string.charAt(0) == '$') {
+                // register
+                int registerNumber = Util.linearSearch(Registers.NAMES, string);
+                if (registerNumber != -1)
+                    return getRegisters().values[registerNumber];
+                try {
+                    return getRegisters().values[Integer.parseInt(string.substring(1))];
+                } catch (NumberFormatException e) {
+                    System.err.println("* ERROR: unrecognized register name: " + string);
+                    throw e;
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    System.err.println(e);
+                    throw new NumberFormatException();
+                }
+            }
+            return Util.parseInt(string);
         }
     }
 }

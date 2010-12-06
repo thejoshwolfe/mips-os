@@ -127,4 +127,11 @@ public final class Util
             return Integer.parseInt(string.substring("0x".length()), 16);
         return Integer.parseInt(string);
     }
+    public static int linearSearch(String[] array, String item)
+    {
+        for (int i = 0; i < array.length; i++)
+            if (item.equals(array[i]))
+                return i;
+        return -1;
+    }
 }
