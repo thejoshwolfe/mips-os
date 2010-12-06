@@ -125,8 +125,10 @@ public class Debugger
             return new Listing(new String[0], -1, -1, address, simulator.getClock());
         }
         ArrayList<String> lines = new ArrayList<String>(listRadius);
+        // try to maintain full size at boundaries
         int start = Math.max(lineNumber - listRadius, 0);
-        int end = Math.min(lineNumber + listRadius + 1, sourceLines.length);
+        int end = Math.min(start + listRadius + 1 + listRadius, sourceLines.length);
+        start = Math.max(end - listRadius - 1 - listRadius, 0);
         for (int i = start; i < end; i++)
             lines.add(sourceLines[i]);
         return new Listing(lines.toArray(new String[lines.size()]), start, lineNumber, address, simulator.getClock());
