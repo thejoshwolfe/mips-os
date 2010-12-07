@@ -441,7 +441,7 @@ public class Tokenizer
 
     private static Token.TokenBase tokenizeInstrOrLabel(final String src, final int i)
     {
-        if (!Character.isLetterOrDigit(src.charAt(i)))
+        if (!(Character.isLetterOrDigit(src.charAt(i)) || src.charAt(i) == '_'))
             return null;
         // instruction or label
         int j = i + 1;
