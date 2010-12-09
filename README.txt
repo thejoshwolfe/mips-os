@@ -19,6 +19,7 @@ some useful debugger commands:
     go: runs from that point onward
     b, break: displays or sets breakpoints at line numbers or addresses
     <just pressing enter>: runs the last command again
+    for the complete list of commands, see Debugger.java
 
 
 References:
